@@ -1,0 +1,40 @@
+{
+  "name": "procure_to_pay_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "ts-node scripts/seed/index.ts",
+    "build": "tsc",
+    "start": "nodemon tsc dist/server.js",
+    "dev": "nodemon src/server.ts",
+    "dev1": "nodemon --exec \"ts-node --files\" src/server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.3.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "axios": "^1.13.5",
+    "bcrypt": "^6.0.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^3.2.2",
+    "mongoose": "^9.2.1",
+    "nanoid": "^5.1.6",
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.3"
+  }
+}

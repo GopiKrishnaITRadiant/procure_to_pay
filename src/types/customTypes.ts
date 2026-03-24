@@ -1,0 +1,102 @@
+export interface POItem {
+  Ebeln: string;
+  Ebelp: string;
+  Charg: string;
+  Idnlf: string;
+  Matnr: string;
+  Maktx: string;
+  Menge: number;
+  Meins: string;
+  Uebto: number;
+  Peinh: string;
+  Netpr: number;
+  Netwr: number;
+  Eindt: string;
+  Del_qty: number;
+  Budat: string;
+  Open_qty: number;
+  Dmbtr: number;
+  Inv_dt: string;
+  Mvt_type: string;
+  Del_sts: string;
+  Parking_status: string;
+  Parked_qty: number;
+  Plant: string;
+  Mail_ind: string;
+  Mail_ind_1: string;
+  Mail_ind_2: string;
+  Mail_ind_3: string;
+  Mail_ind_4: string;
+};
+
+export interface UOMConv {
+  PO_Num: string;
+  Material: string;
+  Alt_Unit: string;
+  Numerator: number;
+  Denominator: number;
+};
+
+export interface PO {
+  Ebeln: string;
+  Plant: string;
+  Name1: string;
+  Del_sts: string;
+  menge: number;
+  Conf_qty: number;
+  Netpr: number;
+  Asn_sts: string;
+  Bedat: string;
+  Eknam: string;
+  Smtp_addr: string;
+  City: string;
+  Country: string;
+  Delivery_Dt: string;
+  Vendor_mail1: string;
+  Vendor_mail2: string;
+  Vendor_mail3: string;
+  Vendor_mail4: string;
+  Mail_ind: string;
+  Mail_ind_1: string;
+  Mail_ind_2: string;
+  Mail_ind_3: string;
+  Mail_ind_4: string;
+  PO_itemSet: { results: POItem[] };
+  UOM_CONVSet: { results: UOMConv[] };
+};
+
+export interface OptimizedPO {
+  Ebeln: string;
+  Plant: string;
+  Name1: string;
+  Del_sts: string;
+  menge: number;
+  Conf_qty: number;
+  Netpr: number;
+  Asn_sts: string;
+  Bedat: string;
+  Eknam: string;
+  Smtp_addr: string;
+  City: string;
+  Country: string;
+  Delivery_Dt: string;
+  Vendor_mail1: string;
+  Vendor_mail2: string;
+  Vendor_mail3: string;
+  Vendor_mail4: string;
+  Mail_ind: string;
+  Mail_ind_1: string;
+  Mail_ind_2: string;
+  Mail_ind_3: string;
+  Mail_ind_4: string;
+  PO_itemSet: { results: POItem[] };
+  UOM_CONVSet: { results: UOMConv[] };
+};
+
+export interface OptimizedPOAcknowledgment {
+  Ebeln: string;
+  Del_sts: string;
+  Delivery_Dt: string;
+  PO_itemSet: { results: POItem[] };
+  UOM_CONVSet: { results: UOMConv[] };
+};

@@ -1,0 +1,160 @@
+[
+  {
+    "name": "Acme Corp",
+    "legalName": "Acme Corporation Private Limited",
+    "domain": "acme.com",
+    "orgEmail": "admin@acme.com",
+    "phone": "+91-9876543210",
+    "website": "https://acme.com",
+    "industry": "Manufacturing",
+    "taxId": "27ABCDE1234F1Z5",
+    "registrationNumber": "U12345MH2024PTC000001",
+
+    "address": {
+      "street": "123 Business Park",
+      "landmark": "Near Tech Tower",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "postalCode": "400001",
+      "latitude": 19.076,
+      "longitude": 72.8777
+    },
+
+    "plan": "FREE"
+  },
+  {
+    "name": "Beta Technologies",
+    "legalName": "Beta Technologies Private Limited",
+    "domain": "beta-tech.com",
+    "orgEmail": "admin@beta-tech.com",
+    "phone": "+1-202-555-0101",
+    "website": "https://beta-tech.com",
+    "industry": "Information Technology",
+    "taxId": "BTX1234567",
+    "registrationNumber": "US-REG-10001",
+    "address": {
+      "street": "500 Silicon Avenue",
+      "landmark": "Tech Valley",
+      "city": "San Francisco",
+      "state": "California",
+      "country": "USA",
+      "postalCode": "94105",
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    "plan": "STANDARD"
+  },
+  {
+    "name": "GreenField Agro",
+    "legalName": "GreenField Agro Industries Ltd",
+    "domain": "greenfieldagro.in",
+    "orgEmail": "contact@greenfieldagro.in",
+    "phone": "+91-9988776655",
+    "website": "https://greenfieldagro.in",
+    "industry": "Agriculture",
+    "taxId": "29GFAGRO9087K1Z2",
+    "registrationNumber": "CIN-L01122KA2022PLC000111",
+    "address": {
+      "street": "45 Farm Estate Road",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "country": "India",
+      "postalCode": "560001"
+    },
+    "plan": "FREE"
+  },
+  {
+    "name": "Nova Manufacturing",
+    "legalName": "Nova Manufacturing Corporation",
+    "domain": "novamfg.com",
+    "orgEmail": "admin@novamfg.com",
+    "phone": "+44-20-7946-0958",
+    "website": "https://novamfg.com",
+    "industry": "Manufacturing",
+    "taxId": "UK-TAX-778899",
+    "registrationNumber": "UK-REG-556677",
+    "address": {
+      "street": "22 Industrial Park",
+      "city": "London",
+      "state": "England",
+      "country": "United Kingdom",
+      "postalCode": "EC1A 1BB"
+    },
+    "plan": "ENTERPRISE"
+  },
+  {
+    "name": "Zenith Healthcare",
+    "legalName": "Zenith Healthcare Solutions Pvt Ltd",
+    "domain": "zenithhealthcare.com",
+    "orgEmail": "admin@zenithhealthcare.com",
+    "phone": "+91-9123456780",
+    "website": "https://zenithhealthcare.com",
+    "industry": "Healthcare",
+    "taxId": "27ZHC1234P1Z8",
+    "registrationNumber": "CIN-U85110MH2023PTC123456",
+    "address": {
+      "street": "88 Wellness Street",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "country": "India",
+      "postalCode": "411001"
+    },
+    "plan": "STANDARD"
+  },
+  {
+    "name": "Orion Logistics",
+    "legalName": "Orion Global Logistics Ltd",
+    "domain": "orionlogistics.co",
+    "orgEmail": "admin@orionlogistics.co",
+    "phone": "+971-50-1234567",
+    "website": "https://orionlogistics.co",
+    "industry": "Logistics & Supply Chain",
+    "taxId": "UAE-TAX-445566",
+    "registrationNumber": "UAE-REG-778899",
+    "address": {
+      "street": "Warehouse District 12",
+      "city": "Dubai",
+      "state": "Dubai",
+      "country": "UAE",
+      "postalCode": "00000"
+    },
+    "plan": "ENTERPRISE"
+  },
+  {
+  "integrationId": "66f1b3d2b91234567890ab10",
+  "templateId": "66f1b420b91234567890ab11",
+  "environment": "prod",
+  "baseUrl": "https://login.microsoftonline.com",
+  "credentials": {
+    "clientId": "azure-client-id",
+    "clientSecret": "azure-client-secret",
+    "tenantId": "azure-tenant-id"
+  },
+  "isEnabled": true
+},
+{
+  "integrationId": "66f1b3d2b91234567890ab20",
+  "templateId": "66f1b420b91234567890ab21",
+  "environment": "prod",
+  "baseUrl": "https://s3.amazonaws.com",
+  "credentials": {
+    "accessKeyId": "AKIA_TEST_ACCESS_KEY",
+    "secretAccessKey": "TEST_SECRET_KEY",
+    "region": "ap-south-1",
+    "bucketName": "tenant-documents"
+  },
+  "isEnabled": true
+},
+{
+  "integrationId": "66f1b3d2b91234567890ab30",
+  "templateId": "66f1b420b91234567890ab31",
+  "environment": "prod",
+  "baseUrl": "https://api.sendgrid.com",
+  "credentials": {
+    "provider": "sendgrid",
+    "apiKey": "SG.TEST_API_KEY"
+  },
+  "isEnabled": true
+}
+]
