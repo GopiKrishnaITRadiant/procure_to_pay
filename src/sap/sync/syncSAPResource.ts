@@ -9,8 +9,7 @@ export const syncSAPResource = async (
   template: any,
   resource: string
 ) => {
-  console.log(`Syncing resource: ${resource}`);
-
+  
   const resourceConfig = getResourceConfig(template.resources, resource);
   if (!resourceConfig) return;
 
@@ -36,9 +35,9 @@ export const syncSAPResource = async (
     request.method,
     integration.credentials
   );
-  // console.log('response',response);
+  
   const adapted = adaptResponse(template, response.data);
-  // console.log('template.fieldMappings',template.fieldMappings);
+  
   const mapped = applyFieldMappingFromSAP(
     template.fieldMappings,
     resource,
@@ -46,6 +45,4 @@ export const syncSAPResource = async (
   );
   console.log('mapped',mapped);
   return mapped;
-  // console.log('adapted',adapted);
-  // return adapted;
 };

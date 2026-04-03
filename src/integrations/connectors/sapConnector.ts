@@ -1,5 +1,5 @@
 import axios from "axios";
-import { IntegrationTemplate, IResourceConfig } from "../../models/integrationTemplateModel";
+import {IntegrationTemplateModel , IResourceConfig } from "../../models/integrationTemplateModel";
 import { buildSapUrl } from "./buildSapUrl";
 
 export class SapConnector {
@@ -13,7 +13,7 @@ export class SapConnector {
     query
   }: {connection:any,resource:any,operation:string,payload:any,keys:any,query:any}) {
 
-    const template = await IntegrationTemplate
+    const template = await IntegrationTemplateModel
       .findById(connection.templateId)
       .lean();
 
@@ -56,7 +56,7 @@ export class SapConnector {
       data: payload,
       headers: {
         // Authorization: `Bearer ${connection.authToken}`,
-        'APIKey':"aQUNjOokPm2jpbJ1DXT0Q7gH55qtvXsD",
+        'APIKey':"${connection.apiKey}",
         "Content-Type": "application/json"
       }
     });
