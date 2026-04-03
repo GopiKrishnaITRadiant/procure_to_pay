@@ -91,6 +91,12 @@ const tenantSchema = new Schema<ITenant>(
       index: true,
     },
 
+    hasSAPIntegration: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
     isSuspended: {
       type: Boolean,
       default: false,

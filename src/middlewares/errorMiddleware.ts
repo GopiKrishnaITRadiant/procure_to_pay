@@ -8,6 +8,7 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
+
   let statusCode = err.statusCode ?? 500;
   let message = err.message ?? "Internal Server Error";
   let errorCode = err.errorCode ?? "INTERNAL_ERROR";
@@ -42,7 +43,7 @@ export const errorMiddleware = (
    */
   else if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
-    message = `Invalid ${err.path}`;
+    message = `Invalid ${err.path}: ${err.value}`;
     errorCode = "INVALID_ID";
   }
 
@@ -70,20 +71,33 @@ export const errorMiddleware = (
     errorCode = "TOKEN_EXPIRED";
   }
 
+  console.error("ERROR LOG:", {
+    message: err.message,
+    stack: err.stack,
+    route: req.originalUrl,
+    method: req.method,
+    params: req.params,
+    query: req.query,
+    body: req.body,
+  });
+
   /**
    * 🔹 Hide internal errors in production
    */
   if (ENV.NODE_ENV !== "production") {
-     return res.status(statusCode).json({
-        success: false,
-        statusCode,
-        message: err.message,
-        errorCode:errorCode||500,
-        errors: err.errors,
-        // stack: err.stack,
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl,
-      });
+    return res.status(statusCode).json({
+      success: false,
+      statusCode,
+      message,
+      errorCode,
+      // errors,
+      originalMessage: err.message,
+      request: {
+        method: req.method,
+        url: req.originalUrl,
+      },
+      timestamp: new Date().toISOString(),
+    });
   }
 
   return res.status(statusCode).json({
@@ -91,8 +105,8 @@ export const errorMiddleware = (
     statusCode,
     message,
     errorCode,
-    errors,
+    // errors,
     timestamp: new Date().toISOString(),
-    path: req.originalUrl,
+    // path: req.originalUrl,
   });
 };

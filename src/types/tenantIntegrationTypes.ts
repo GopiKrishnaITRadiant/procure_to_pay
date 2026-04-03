@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
-
-export type IntegrationType =
+export type IntegrationCode =
   | "SAP"
   | "AZURE_AD"
   | "S3"
@@ -84,12 +83,20 @@ export interface ISapEndpointOverride {
   entitySet?: string;
   path?: string;
   method?: HttpMethod;
-  expand?: string;
+  expand?: string[];
   queryParams?: Record<string, string>;
 }
 
 export type SapResourceOverrides = Partial<
-  Record<SapResource, Partial<Record<"list" | "get" | "create" | "update" | "delete", ISapEndpointOverride>>>
+  Record<
+    SapResource,
+    Partial<
+      Record<
+        "list" | "get" | "create" | "update" | "delete",
+        ISapEndpointOverride
+      >
+    >
+  >
 >;
 
 export interface ISapCredentials {
@@ -117,32 +124,46 @@ export interface IStripeCredentials {
   webhookSecret?: string;
 }
 
-export type IntegrationCredentials =
-  | ISapCredentials
-  | IAzureAdCredentials
-  | IS3Credentials
-  | IStripeCredentials
-  | IEmailProviderCredentials
-  | Record<string, any>;
 
+export type TenantIntegrationConfig =
+  | {
+      integrationCode: "SAP";
+      credentials: ISapCredentials;
+      baseUrl: string;
+      templateId: Types.ObjectId;
+      resourceOverrides?: SapResourceOverrides;
+    }
+  | {
+      integrationCode: "STRIPE";
+      credentials: IStripeCredentials;
+    }
+  | {
+      integrationCode: "S3";
+      credentials: IS3Credentials;
+    }
+  | {
+      integrationCode: "AZURE_AD";
+      credentials: IAzureAdCredentials;
+    }
+  | {
+      integrationCode: "EMAIL_PROVIDER";
+      credentials: IEmailProviderCredentials;
+    }
+  | {
+      integrationCode: "OTHER";
+      credentials: Record<string, any>;
+    };
 
-export interface ITenantIntegration {
-  integrationCode:String;
+export type ITenantIntegration = TenantIntegrationConfig & {
+  name?: string;
+
   tenantId: Types.ObjectId;
 
   integrationId: Types.ObjectId;
 
-  templateId: Types.ObjectId;
-
   environment: EnvironmentType;
 
   isEnabled: boolean;
-
-  baseUrl: string;
-
-  credentials: IntegrationCredentials;
-
-  resourceOverrides?: SapResourceOverrides;
 
   lastSyncedAt?: Date;
 

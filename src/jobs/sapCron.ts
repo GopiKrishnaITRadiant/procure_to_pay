@@ -1,68 +1,80 @@
 import cron from "node-cron";
-import { IntegrationType } from "../types/tenantIntegrationTypes";
-import { executeIntegration } from "../integrations/integrationService";
 import { getTenantConnection } from "../core/tenantConnection";
 import tenantModel from "../models/tenantModel";
+import { integrationModel } from "../models/integrationModel";
+import { IntegrationTemplateModel } from "../models/integrationTemplateModel";
+import pLimit from "p-limit";
+import { processIntegration } from "../sap/processor/processIntegration";
+
+const limit = pLimit(3);
+
+let isRunning = false;
 
 export const startSAPCron = () => {
-
   const runJob = async () => {
+    if (isRunning) {
+      console.log("Skipping overlapping cron");
+      return;
+    }
+
+    isRunning = true;
+    console.log("SAP Cron Started");
+
     try {
-      console.log("Running SAP PO Cron...");
-      const tenants = await tenantModel.find({ status: "active" });
+      const tenants = await tenantModel.find({
+        status: "active",
+        hasSAPIntegration: true,
+      });
 
-      for (const tenant of tenants) {
-        try {
-
-          console.log(`Running SAP fetch for tenant: ${tenant.name}`);
-
-          const tenantConnection = await getTenantConnection(tenant.companyCode);
-
-          const req: any = {
-            tenantConnection
-          };
-
-          const tenantIntegrationModel = tenantConnection.model("TenantIntegration");
-
-          const sapIntegration = await tenantIntegrationModel.findOne({
-            integrationCode: "SAP",
-            environment:"dev"
-          });
-          
-          if (!sapIntegration) {
-            console.log(`SAP not configured for tenant ${tenant.name}`);
-            continue;
-          }
-
-          const response = await executeIntegration({
-            req,
-            tenantIntegrationId: sapIntegration._id,
-            integrationCode: "SAP",
-            resource: "purchaseOrders",
-            operation: "list",
-            payload: null,
-            params: {}
-          });
-
-          console.log(`SAP PO for ${tenant.name}`);
-          // console.log(response);
-
-        } catch (err: any) {
-
-          console.error(
-            `Tenant ${tenant.name} failed:`,
-            err.message
-          );
-
-        }
+      if (!tenants.length) {
+        console.log("No SAP tenants");
+        return;
       }
 
+      await Promise.allSettled(
+        tenants.map((tenant) =>
+          limit(async () => {
+            try {
+              console.log(`Tenant: ${tenant.name}`);
+              const tenantConnection = await getTenantConnection(
+                tenant.companyCode,
+              );
+
+              const TenantIntegration =
+                tenantConnection.model("TenantIntegration");
+
+              const integrations: any = await TenantIntegration.find({
+                isEnabled: true,
+                environment: "prod",
+                templateId: { $exists: true },
+              }).lean();
+
+              if (!integrations.length) {
+                console.log(`No integrations for ${tenant.name}`);
+                return;
+              }
+
+              for (const integration of integrations) {
+                await processIntegration(
+                  tenantConnection,
+                  integration,
+                  IntegrationTemplateModel,
+                );
+                console.log(`Processing integration: ${integration.name}`);
+              }
+            } catch (err: any) {
+              console.error(`Tenant failed: ${tenant.name}`, err.message);
+            }
+          }),
+        ),
+      );
     } catch (err: any) {
-      console.error("SAP Cron failed:", err.message);
+      console.error("Cron failed:", err.message);
+    } finally {
+      isRunning = false;
     }
   };
 
   runJob();
-
-  cron.schedule("*/50 * * * *", runJob);
+  cron.schedule("5 * * * *", runJob);
 };

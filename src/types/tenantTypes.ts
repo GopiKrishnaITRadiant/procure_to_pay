@@ -55,6 +55,7 @@ export interface ITenant {
   };
 
   status: "provisioning" | "active" | "failed";
+  hasSAPIntegration: boolean;
   isSuspended: boolean;
   activatedAt?: Date;
   suspendedAt?: Date;

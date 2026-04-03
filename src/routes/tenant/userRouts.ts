@@ -7,7 +7,7 @@ const routes=Router()
 routes.post("/",authorize(PERMISSIONS.TENANT_USER.UPDATE),addUser)
 routes.get('/:userId',authorize(PERMISSIONS.TENANT_USER.READ),getUserById)
 routes.get('/',authorize(PERMISSIONS.TENANT_USER.READ_ALL),getAllusers)
-routes.put('/',authorize(PERMISSIONS.TENANT_USER.UPDATE),updateUser)
+routes.put('/:userId',authorize(PERMISSIONS.TENANT_USER.UPDATE),updateUser)
 routes.delete('/',authorize(PERMISSIONS.TENANT_USER.DELETE),removeUser)
 
 export default routes

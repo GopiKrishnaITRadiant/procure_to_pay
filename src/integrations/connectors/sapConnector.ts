@@ -28,7 +28,6 @@ export class SapConnector {
         : new Map(Object.entries(template.resources));
 
     const resourceConfig = resources.get(resource)as IResourceConfig;
-    console.log('resourceConfig',resourceConfig)
 
     if (!resourceConfig) {
       throw new Error(`Resource ${resource} not supported`);
@@ -37,7 +36,6 @@ export class SapConnector {
     const endpoint = resourceConfig?.endpoints?.find(
       (e: any) => e.operation === operation
     );
-    console.log('endpoint',endpoint)
 
     if (!endpoint) {
       throw new Error(`Operation ${operation} not supported`);

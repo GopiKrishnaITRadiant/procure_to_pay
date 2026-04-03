@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../utils/apiErrors";
 import { integrationModel } from "../models/integrationModel";
-import { IntegrationTemplate } from "../models/integrationTemplateModel";
+import { IntegrationTemplateModel } from "../models/integrationTemplateModel";
 import { sendResponse } from "../utils/sendResponse";
 import { Types } from "mongoose";
 
@@ -17,6 +17,7 @@ export const createIntegrationTemplate = async (
       name,
       version,
       protocol,
+      odataVersion,
       resources,
       fieldMappings
     } = req.body;
@@ -31,7 +32,31 @@ export const createIntegrationTemplate = async (
       throw new ApiError(404, "Integration not found", "NOT_FOUND");
     }
 
-    const existingTemplate = await IntegrationTemplate.findOne({
+    if (integration.mode !== "TEMPLATE_BASED") {
+      throw new ApiError(
+        400,
+        "Templates are only allowed for TEMPLATE_BASED integrations",
+        "INVALID_INTEGRATION_TYPE"
+      );
+    }
+
+    if (protocol === "odata" && !odataVersion) {
+      throw new ApiError(
+        400,
+        "odataVersion is required for OData protocol",
+        "VALIDATION_ERROR"
+      );
+    }
+
+    if (protocol === "rest" && odataVersion) {
+      throw new ApiError(
+        400,
+        "odataVersion should not be provided for REST protocol",
+        "VALIDATION_ERROR"
+      );
+    }
+
+    const existingTemplate = await IntegrationTemplateModel.findOne({
       integrationId,
       version,
       protocol
@@ -41,11 +66,12 @@ export const createIntegrationTemplate = async (
       throw new ApiError(400, "Template already exists", "DUPLICATE_ERROR");
     }
 
-    const template = await IntegrationTemplate.create({
+    const template = await IntegrationTemplateModel.create({
       integrationId,
       name,
       version,
       protocol,
+      odataVersion,
       resources,
       fieldMappings
     });
@@ -68,38 +94,69 @@ export const updateIntegrationTemplate = async (
   next: NextFunction
 ) => {
   try {
-
     const { templateId } = req.params;
 
-    if (!templateId) {
-      throw new ApiError(400, "Valid templateId is required", "VALIDATION_ERROR");
-    }
+    const { name, version, protocol, odataVersion, resources, fieldMappings } =
+      req.body;
 
-    const {
-      name,
-      version,
-      protocol,
-      resources,
-      fieldMappings
-    } = req.body;
-
-    const template = await IntegrationTemplate.findById(templateId);
+    const template = await IntegrationTemplateModel.findById(templateId);
 
     if (!template) {
       throw new ApiError(404, "Integration template not found", "NOT_FOUND");
     }
 
-    // check duplicate only if version or protocol changed
-    if (
-      (version && version !== template.version) ||
-      (protocol && protocol !== template.protocol)
-    ) {
+    const integration = await integrationModel.findById(template.integrationId);
 
-      const duplicate = await IntegrationTemplate.findOne({
+    if (!integration) {
+      throw new ApiError(404, "Integration not found", "NOT_FOUND");
+    }
+
+    if (integration.mode !== "TEMPLATE_BASED") {
+      throw new ApiError(
+        400,
+        "Templates are only allowed for TEMPLATE_BASED integrations",
+        "INVALID_INTEGRATION_TYPE"
+      );
+    }
+
+    // Only validate and update protocol if provided
+    if (protocol !== undefined) {
+      if (protocol === "odata" && odataVersion === undefined && template.odataVersion === undefined) {
+        throw new ApiError(
+          400,
+          "odataVersion is required for OData protocol",
+          "VALIDATION_ERROR"
+        );
+      }
+
+      if (protocol === "rest" && odataVersion !== undefined) {
+        throw new ApiError(
+          400,
+          "odataVersion should not be provided for REST protocol",
+          "VALIDATION_ERROR"
+        );
+      }
+
+      template.protocol = protocol;
+
+      // Adjust odataVersion only if protocol is changing
+      if (protocol === "rest") {
+        template.odataVersion = undefined;
+      } else if (odataVersion !== undefined) {
+        template.odataVersion = odataVersion;
+      }
+    } else if (odataVersion !== undefined) {
+      // Update odataVersion only if explicitly provided
+      template.odataVersion = odataVersion;
+    }
+
+    // Only update version if provided
+    if (version !== undefined) {
+      const duplicate = await IntegrationTemplateModel.findOne({
         integrationId: template.integrationId,
-        version: version ?? template.version,
-        protocol: protocol ?? template.protocol,
-        _id: { $ne: new Types.ObjectId(templateId as string) }
+        version,
+        protocol: template.protocol,
+        _id: { $ne: template._id },
       });
 
       if (duplicate) {
@@ -109,11 +166,12 @@ export const updateIntegrationTemplate = async (
           "DUPLICATE_ERROR"
         );
       }
+
+      template.version = version;
     }
 
+    // Update other fields if provided
     if (name !== undefined) template.name = name;
-    if (version !== undefined) template.version = version;
-    if (protocol !== undefined) template.protocol = protocol;
     if (resources !== undefined) template.resources = resources;
     if (fieldMappings !== undefined) template.fieldMappings = fieldMappings;
 
@@ -123,9 +181,8 @@ export const updateIntegrationTemplate = async (
       res,
       statusCode: 200,
       message: "Integration template updated successfully",
-      data: template
+      data: template,
     });
-
   } catch (error) {
     next(error);
   }
@@ -156,12 +213,12 @@ export const getAllIntegrationTemplates = async (
     if (version) filters.version = version;
 
     const [templates, total] = await Promise.all([
-      IntegrationTemplate.find(filters)
+      IntegrationTemplateModel.find(filters)
         .sort({ [sortBy as string]: order === "asc" ? 1 : -1 })
         .skip(skip)
         .limit(limitNumber)
         .lean(),
-      IntegrationTemplate.countDocuments(filters)
+      IntegrationTemplateModel.countDocuments(filters)
     ]);
 
     return sendResponse({

@@ -14,6 +14,7 @@ export const addUser = async (req: Request, res: Response, next: NextFunction) =
     }
 
     const User = req.tenantConnection.model("User");
+    const Role = req.tenantConnection.model("Role")
 
     if (!email || !displayName || !role) {
       throw new ApiError(400, "email, displayName, and role are required", "VALIDATION_ERROR");
@@ -22,6 +23,11 @@ export const addUser = async (req: Request, res: Response, next: NextFunction) =
     const existingUser = await User.findOne({ email: email.toLowerCase(), tenantId });
     if (existingUser) {
       throw new ApiError(409, "User with this email already exists", "CONFLICT");
+    }
+
+    const existingRole = await Role.findOne({_id:role})
+    if(!existingRole){
+      throw new ApiError(400, "Role not found", "NotFound")
     }
 
     if (approvalLimit > adminUser.approvalLimit) {
@@ -150,7 +156,7 @@ export const updateUser = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.params;
     const { displayName, email, role, department, approvalLimit } = req.body;
 
     if (!req.tenantConnection) {
@@ -159,7 +165,7 @@ export const updateUser = async (
 
     const User = req.tenantConnection.model("User");
 
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
 
     if (!user || !user.isActive) {
       return res.status(404).json({ message: "User not found" });

@@ -17,6 +17,9 @@ import termsRoutes from "./termsRoutes"
 import categoryRoutes from "./tenant/categoryRoutes"
 import materialRoutes from "./tenant/materialRoutes"
 import requisitionRoutes from "./tenant/requisitionRoutes"
+import vendorRoutes from "./tenant/vendorRoutes"
+import vendorAuthRoutes from "./tenant/vendorAuthRoutes"
+import tenantAdminRoutes from "./tenant/tenantAdminRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -24,15 +27,20 @@ const apiRouter = Router();
 //Public routes
 apiRouter.use("/tenant/auth", authRoutes);
 apiRouter.use("/super-admin", platformUserRoutes);
+apiRouter.use("/tenant/vendor-user",vendorAuthRoutes)
 
 //Protected routes
 apiRouter.use(authenticate);
 
+//admin routes
 apiRouter.use("/tenants", tenantRoutes);
 apiRouter.use("/plans", planRoutes);
 apiRouter.use("/integrations", integrationRoutes);
 apiRouter.use("/integration-templates",integrationTemplateRoutes)
 apiRouter.use("/terms",termsRoutes)
+
+//tenant admin routes
+apiRouter.use("/tenant/admin",tenantAdminRoutes)
 
 //tenant routes
 apiRouter.use("/tenant/roles", rolesRoutes);
@@ -43,6 +51,7 @@ apiRouter.use("/tenant/amount-limit",tenantAmoutLimitRoutes)
 apiRouter.use("/tenant/category",categoryRoutes)
 apiRouter.use("/tenant/material",materialRoutes)
 apiRouter.use("/tenant/requisition",requisitionRoutes)
+apiRouter.use("/tenant/vendor",vendorRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);

@@ -22,6 +22,6 @@ export const generateInternalToken = (user: generateInternalTokenParams) => {
       companyCode:user.companyCode
     },
     ENV.JWT_SECRET!,
-    { expiresIn: "1d" }
+    { expiresIn: "7d" }
   );
 };

@@ -55,11 +55,39 @@ export const PERMISSIONS = {
 
   VENDOR: {
     CREATE: "vendor:create",
-    READ: "vendor:read",
+    READ_ALL: "vendor:read:all",
+    READ_ONE: "vendor:read:one",
     UPDATE: "vendor:update",
     DELETE: "vendor:delete",
+
+    SUBMIT: "vendor:submit",
     APPROVE: "vendor:approve",
     REJECT: "vendor:reject",
+
+    ACTIVATE: "vendor:activate",
+    DEACTIVATE: "vendor:deactivate",
+
+    BLOCK: "vendor:block",
+    UNBLOCK: "vendor:unblock",
+
+    INVITE_USER: "vendor:invite:user",
+  },
+
+  VENDOR_USER: {
+    LOGIN: "vendor-user:login",
+
+    PROFILE_READ: "vendor-user:profile:read",
+    PROFILE_UPDATE: "vendor-user:profile:update",
+
+    PO_READ: "vendor-user:po:read",
+
+    INVOICE_CREATE: "vendor-user:invoice:create",
+    INVOICE_READ: "vendor-user:invoice:read",
+
+    PAYMENT_READ: "vendor-user:payment:read",
+
+    KYC_UPLOAD: "vendor-user:kyc:upload",
+    KYC_READ: "vendor-user:kyc:read",
   },
 
   INVOICE: {
@@ -89,25 +117,25 @@ export const PERMISSIONS = {
   },
 
   AMOUNT_LIMIT: {
-    CREATE_UPDATE:"amount-limit:create_update",
-    READ:"amount-limit:read",
-    READ_ALL:'amount-limit:read:all',
-    DELETE:'amount-limit:delete'
+    CREATE_UPDATE: "amount-limit:create_update",
+    READ: "amount-limit:read",
+    READ_ALL: "amount-limit:read:all",
+    DELETE: "amount-limit:delete",
   },
   TENANT_USER: {
-    READ:"tenat-user:read",
-    READ_ALL:"tenant-user:read:all",
-    UPDATE:"tenat-user:update",
-    DELETE:"tenant-user:delete"
+    READ: "tenat-user:read",
+    READ_ALL: "tenant-user:read:all",
+    UPDATE: "tenat-user:update",
+    DELETE: "tenant-user:delete",
   },
 
-  TERMS:{
-    READ:"terms:read",
-    CREATE:"terms:create",
-    UPDATE:"terms:update",
-    ACTIVE:"terms:active",
-    INACTIVE:"terms:inactive"
-  }
+  TERMS: {
+    READ: "terms:read",
+    CREATE: "terms:create",
+    UPDATE: "terms:update",
+    ACTIVE: "terms:active",
+    INACTIVE: "terms:inactive",
+  },
 };
 
 export const SUPER_ADMIN_PERMISSIONS = [
@@ -117,5 +145,5 @@ export const SUPER_ADMIN_PERMISSIONS = [
   // ...Object.values(PERMISSIONS.TENANT_INTEGRATION),
   ...Object.values(PERMISSIONS.TENANT_SUBSCRIPTION),
   // ...Object.values(PERMISSIONS.VENDOR),
-  (PERMISSIONS.REPORT.READ),
+  PERMISSIONS.REPORT.READ,
 ];

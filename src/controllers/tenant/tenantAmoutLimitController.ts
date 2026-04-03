@@ -9,7 +9,7 @@ export const tenantAmountLimitCreateOrUpdate = async (
 ) => {
   try {
     const { tenantId, roleId } = req.params;
-    const { minAmount, maxAmount, level, priority, isActive } = req.body;
+    const { minAmount=0, maxAmount, level, approvalsRequired, isActive } = req.body;
 
     if (!req.tenantConnection) {
       throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
@@ -48,7 +48,7 @@ export const tenantAmountLimitCreateOrUpdate = async (
           minAmount,
           maxAmount,
           level,
-          priority,
+          approvalsRequired,
           isActive
         },
       },

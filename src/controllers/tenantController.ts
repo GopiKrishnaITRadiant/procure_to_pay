@@ -11,7 +11,12 @@ import subscriptionModel from "../models/planModel";
 import { ENV } from "../config/env";
 import { Types } from "mongoose";
 import { integrationModel } from "../models/integrationModel";
-import defaultRoles, { defaultApprovalLimits, defaultCategories, defaultMaterials } from "../utils/constants";
+import defaultRoles, {
+  defaultApprovalLimits,
+  defaultCategories,
+  defaultMaterials,
+} from "../utils/constants";
+import { IntegrationTemplateModel } from "../models/integrationTemplateModel";
 
 export const createTenant = async (
   req: Request,
@@ -84,9 +89,9 @@ export const createTenant = async (
           companyCode,
           dbName,
           address,
-          phone:{
-            countryCode:phone.countryCode,
-            number:phone.number
+          phone: {
+            countryCode: phone.countryCode,
+            number: phone.number,
           },
           limits: {
             maxUsers: 10,
@@ -94,7 +99,7 @@ export const createTenant = async (
             maxStorageMB: 500,
           },
           status: "provisioning",
-          createdBy:new Types.ObjectId(req.user?.userId)
+          createdBy: new Types.ObjectId(req.user?.userId),
         });
       } catch (error: any) {
         if (error.code === 11000) {
@@ -118,43 +123,73 @@ export const createTenant = async (
 
         const Role = connection.model("Role");
         const User = connection.model("User");
-        const TenantAmountLimit = connection.model("TenantAmountLimit")
-        const TenantIntegrations = connection.model("TenantIntegration")
-        const Category=connection.model("Category")
-        const Material=connection.model("Material")
+        const TenantAmountLimit = connection.model("TenantAmountLimit");
+        const TenantIntegrations = connection.model("TenantIntegration");
+        const Category = connection.model("Category");
+        const Material = connection.model("Material");
 
         await Role.insertMany(defaultRoles, { ordered: false });
 
         const roles = await Role.find();
 
-        const roleMap = roles.reduce((acc, role) => {
-          acc[role.name] = role._id;
-          return acc;
-        }, {} as Record<string, Types.ObjectId>);
+        const roleMap = roles.reduce(
+          (acc, role) => {
+            acc[role.name] = role._id;
+            return acc;
+          },
+          {} as Record<string, Types.ObjectId>,
+        );
 
         const approvalDocs = defaultApprovalLimits.map((limit) => ({
           roleId: roleMap[limit.role],
           minAmount: limit.minAmount,
           maxAmount: limit.maxAmount,
-          tenantId: tenant._id
+          tenantId: tenant._id,
+          level: limit.level,
+          approvalsRequired: limit.approvalsRequired,
         }));
 
         const integrations = await integrationModel.find({
-          code: { $in: ["EMAIL_PROVIDER", "S3"] },
           isActive: true,
         });
 
-        const tenantIntegrations = integrations.map((integration) => ({
-          tenantId: tenant._id,
-          integrationId: integration._id,
-          environment: "prod",
-          isEnabled: true,
-          config: {},
-        }));
+        const tenantIntegrations: any[] = [];
 
-        await TenantIntegrations.insertMany(tenantIntegrations, {
-          ordered: false,
-        });
+        for (const integration of integrations) {
+          if (integration.mode === "TEMPLATE_BASED") {
+            const templates = await IntegrationTemplateModel.find({
+              integrationId: integration._id,
+              isActive: true,
+            });
+
+            for (const template of templates) {
+              tenantIntegrations.push({
+                tenantId: tenant._id,
+                name: `${integration.name} - ${template.protocol}`,
+                integrationId: integration._id,
+                templateId: template._id,
+                environment: "prod",
+                baseUrl: "",
+                credentials: {},
+                resourceOverrides: {},
+                isEnabled: false,
+              });
+            }
+          } else if (integration.mode === "SDK_BASED") {
+            tenantIntegrations.push({
+              tenantId: tenant._id,
+              name: integration.name,
+              integrationId: integration._id,
+              environment: "prod",
+              credentials: {},
+              isEnabled: false,
+            });
+          }
+        }
+
+        if (tenantIntegrations.length) {
+          await TenantIntegrations.insertMany(tenantIntegrations);
+        }
 
         await TenantAmountLimit.insertMany(approvalDocs);
 
@@ -175,7 +210,7 @@ export const createTenant = async (
               password: hashedPassword,
               role: adminRole._id,
               isActive: true,
-              tenantId:tenant._id
+              tenantId: tenant._id,
             },
           },
           { upsert: true },
@@ -185,14 +220,18 @@ export const createTenant = async (
         const categoryDocs = defaultCategories.map((cat) => ({
           ...cat,
           tenantId: tenant._id,
+          createdBy: req.user?.userId,
         }));
 
         const categories = await Category.insertMany(categoryDocs);
 
-        const categoryMap = categories.reduce((acc, cat) => {
-          acc[cat.name] = cat._id;
-          return acc;
-        }, {} as Record<string, Types.ObjectId>);
+        const categoryMap = categories.reduce(
+          (acc, cat) => {
+            acc[cat.name] = cat._id;
+            return acc;
+          },
+          {} as Record<string, Types.ObjectId>,
+        );
 
         const materialDocs = defaultMaterials.map((mat) => {
           const categoryId = categoryMap[mat.category];

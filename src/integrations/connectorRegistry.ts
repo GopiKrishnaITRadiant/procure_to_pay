@@ -1,5 +1,5 @@
 
-import { IntegrationType } from "../types/tenantIntegrationTypes";
+import { IntegrationCode } from "../types/tenantIntegrationTypes";
 import { SapConnector } from "./connectors/sapConnector";
 
 type ConnectorRegistry = {
@@ -20,7 +20,7 @@ export const connectorRegistry: ConnectorRegistry = {
   STRIPE:new SapConnector()
 };
 
-export const getConnector = (code:IntegrationType): SapConnector => {
+export const getConnector = (code:IntegrationCode): SapConnector => {
   const connector = connectorRegistry[code];
 
   if (!connector) {

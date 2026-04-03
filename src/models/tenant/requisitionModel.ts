@@ -6,7 +6,7 @@ export interface IRequisitionItem {
   itemNumber: string;
 
   material?: string;
-  materialId?:Types.ObjectId;
+  materialId?: Types.ObjectId;
   description: string;
 
   quantity: number;
@@ -23,7 +23,7 @@ export interface IRequisitionItem {
   status: "OPEN" | "PARTIALLY_ORDERED" | "ORDERED" | "CANCELLED";
 
   orderedQuantity?: number;
-  isMaterialCatalog:boolean;
+  isMaterialCatalog: boolean;
 }
 
 const RequisitionItemSchema = new Schema<IRequisitionItem>(
@@ -31,7 +31,7 @@ const RequisitionItemSchema = new Schema<IRequisitionItem>(
     itemNumber: { type: String, required: true },
 
     material: { type: String, index: true },
-    materialId:{ type: Schema.Types.ObjectId,ref:"Material" ,index:true},
+    materialId: { type: Schema.Types.ObjectId, ref: "Material", index: true },
     description: { type: String, required: true },
 
     quantity: { type: Number, required: true },
@@ -53,30 +53,52 @@ const RequisitionItemSchema = new Schema<IRequisitionItem>(
     },
 
     orderedQuantity: { type: Number, default: 0 },
-    isMaterialCatalog: {type:Boolean,}
+    isMaterialCatalog: { type: Boolean, }
   },
-  { _id: true,versionKey:false }
+  { _id: true, versionKey: false }
 );
 
 export interface IApprovalStep {
   level: number;
-  roleId: Types.ObjectId;
+
+  roleIds: Types.ObjectId[];
+
+  approvalsRequired: number;
+
+  approvedBy: Types.ObjectId[];
 
   status: "PENDING" | "APPROVED" | "REJECTED";
 
-  approvedBy?: Types.ObjectId;
   approvedAt?: Date;
+
+  rejectedBy: Schema.Types.ObjectId,
+  rejectedAt: Date,
+  rejectionReason: String,
 }
 
 const ApprovalStepSchema = new Schema<IApprovalStep>(
   {
     level: { type: Number, required: true },
 
-    roleId: {
-      type: Schema.Types.ObjectId,
-      ref: "Role",
-      index: true,
+    roleIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Role",
+        index: true,
+      },
+    ],
+
+    approvalsRequired: {
+      type: Number,
+      default: 1,
     },
+
+    approvedBy: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
 
     status: {
       type: String,
@@ -85,10 +107,18 @@ const ApprovalStepSchema = new Schema<IApprovalStep>(
       index: true,
     },
 
-    approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
     approvedAt: { type: Date },
+
+    rejectedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    rejectedAt: { type: Date },
+
+    rejectionReason: { type: String },
   },
-  { _id: false, versionKey:false }
+  { _id: false, versionKey: false }
 );
 
 export interface IRequisition {
@@ -100,13 +130,13 @@ export interface IRequisition {
   department?: string;
 
   status:
-    | "DRAFT"
-    | "SUBMITTED"
-    | "APPROVED"
-    | "REJECTED"
-    | "PARTIALLY_CONVERTED"
-    | "CONVERTED"
-    | "CANCELLED";
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "PARTIALLY_CONVERTED"
+  | "CONVERTED"
+  | "CANCELLED";
 
   approvalStatus: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
 
@@ -117,6 +147,7 @@ export interface IRequisition {
   approvedBy?: Types.ObjectId;
   approvedAt?: Date;
   rejectionReason?: string;
+  skipApproval: boolean
 
   requiredDate?: Date;
 
@@ -187,8 +218,9 @@ export const RequisitionSchema = new Schema<IRequisition>(
     approvedAt: { type: Date },
     rejectionReason: { type: String },
 
-    requiredDate: { type: Date },
+    skipApproval: { type: Boolean, default: false },
 
+    requiredDate: { type: Date },
     totalEstimatedAmount: { type: Number, index: true },
     currency: { type: String },
 
@@ -208,7 +240,7 @@ export const RequisitionSchema = new Schema<IRequisition>(
     createdBy: { type: Schema.Types.ObjectId, required: true },
     updatedBy: { type: Schema.Types.ObjectId },
   },
-  { timestamps: true, versionKey:false }
+  { timestamps: true, versionKey: false }
 );
 
 RequisitionSchema.index(

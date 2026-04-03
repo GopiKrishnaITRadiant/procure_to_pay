@@ -8,22 +8,22 @@ export interface ITenantAmountLimit {
   minAmount: number;
   maxAmount: number;
 
-  priority: number;
   level:number;
+  approvalsRequired:number;
   isActive:boolean;
 }
 
 export const tenantAmountLimitSchema = new Schema<ITenantAmountLimit>(
   {
     tenantId: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Tenant",
       required: true,
       index: true,
     },
 
     roleId: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Role",
       required: true,
     },
@@ -44,18 +44,23 @@ export const tenantAmountLimitSchema = new Schema<ITenantAmountLimit>(
       required: true,
     },
 
-    priority: {
+    level: {
+      type: Number,
+      required: true,
+    },
+
+    approvalsRequired: {
       type: Number,
       default: 1,
     },
-    level:{
-      type:Number,
-      default:1
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
-    isActive:{
-      type:Boolean,
-      default:true
-    }
   },
-  { timestamps: true,versionKey:false }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );

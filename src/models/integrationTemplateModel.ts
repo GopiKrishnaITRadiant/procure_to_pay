@@ -3,7 +3,7 @@ import { Schema, model, Types, Document } from "mongoose";
 
 export type ApiProtocol = "odata" | "rest";
 
-export type ODataVersion = "v4" | "v2";
+export type ODataVersion = "v4" | "v2"| undefined;
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -13,8 +13,6 @@ export type ResourceOperation =
   | "create"
   | "update"
   | "delete";
-
-
 
 export interface IEndpointConfig {
   operation: ResourceOperation;
@@ -28,6 +26,8 @@ export interface IEndpointConfig {
   expand?: string[];
 
   queryParams?: Record<string, string | string[]>;
+
+  isEnabled: boolean;
 }
 
 const EndpointConfigSchema = new Schema<IEndpointConfig>(
@@ -54,8 +54,10 @@ const EndpointConfigSchema = new Schema<IEndpointConfig>(
       type: Map,
       of: Schema.Types.Mixed,
     },
+
+    isEnabled: { type: Boolean, default: true },
   },
-  { _id: false }
+  { _id: false, versionKey:false }
 );
 
 
@@ -142,7 +144,7 @@ const IntegrationTemplateSchema = new Schema<IIntegrationTemplate>(
     odataVersion: {
       type: String,
       enum: ["v4", "v2"],
-      default: "v4",
+      default: undefined,
     },
 
     resources: {
@@ -166,7 +168,7 @@ const IntegrationTemplateSchema = new Schema<IIntegrationTemplate>(
   }
 );
 
-export const IntegrationTemplate = model<IIntegrationTemplate>(
+export const IntegrationTemplateModel = model<IIntegrationTemplate>(
   "IntegrationTemplate",
   IntegrationTemplateSchema
 );

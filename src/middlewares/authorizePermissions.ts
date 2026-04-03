@@ -7,7 +7,6 @@ export const authorize = (...required: string[]) => {
     }
 
     const userPermissions = req.user.permissions || [];
-    console.log('userper',userPermissions)
 
     if (userPermissions.includes("access:all")) {
       return next();

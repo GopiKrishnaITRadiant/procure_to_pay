@@ -1,4 +1,4 @@
-import { IntegrationType } from "../types/tenantIntegrationTypes";
+import { IntegrationCode } from "../types/tenantIntegrationTypes";
 import { getConnector } from "./connectorRegistry";
 
 export const executeIntegration = async ({
@@ -14,7 +14,7 @@ export const executeIntegration = async ({
 }: {
   req: any;
   tenantIntegrationId: string;
-  integrationCode: IntegrationType;
+  integrationCode: IntegrationCode;
   resource: {};
   operation: string;
   payload: any;

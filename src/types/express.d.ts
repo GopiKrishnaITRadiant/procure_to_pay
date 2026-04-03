@@ -9,8 +9,9 @@ interface IAuthUser {
   permissions: string[];
   approvalLimit?: number;
   department?: string;
-  userType: "TENANT" | "PLATFORM";
+  userType: "TENANT" | "PLATFORM" | "VENDOR";
   companyCode:string
+  vendorId?: string
 }
 
 declare global {

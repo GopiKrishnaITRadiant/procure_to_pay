@@ -26,6 +26,7 @@ export const createRequisition = async (
       items,
       source = "MANUAL",
       externalId,
+      skipApproval
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -38,9 +39,9 @@ export const createRequisition = async (
 
     const materials = materialIds.length
       ? await Material.find({
-          _id: { $in: materialIds },
-          isActive: true,
-        }).lean()
+        _id: { $in: materialIds },
+        isActive: true,
+      }).lean()
       : [];
 
     const materialMap = new Map(
@@ -126,6 +127,7 @@ export const createRequisition = async (
 
       createdBy: user.userId,
       totalEstimatedAmount,
+      skipApproval,
 
       status: "DRAFT",
       approvalStatus: "PENDING",
@@ -181,6 +183,7 @@ export const updateRequisition = async (
       items,
       source,
       externalId,
+      skipApproval
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -208,9 +211,9 @@ export const updateRequisition = async (
 
     const materials = materialIds.length
       ? await Material.find({
-          _id: { $in: materialIds },
-          isActive: true,
-        }).lean()
+        _id: { $in: materialIds },
+        isActive: true,
+      }).lean()
       : [];
 
     const materialMap = new Map(
@@ -266,10 +269,10 @@ export const updateRequisition = async (
     const maxItemNumber =
       existingRequisition.items.length > 0
         ? Math.max(
-            ...existingRequisition.items.map((i: any) =>
-              Number(i.itemNumber)
-            )
+          ...existingRequisition.items.map((i: any) =>
+            Number(i.itemNumber)
           )
+        )
         : 0;
 
     const newItems = items
@@ -356,6 +359,7 @@ export const updateRequisition = async (
     existingRequisition.externalId =
       externalId ?? existingRequisition.externalId;
 
+    existingRequisition.skipApproval = skipApproval
     existingRequisition.totalEstimatedAmount = totalEstimatedAmount;
 
     existingRequisition.updatedBy = user.userId;
@@ -441,7 +445,7 @@ export const removeRequisition = async (
   }
 };
 
-export const submitRequisition = async (req:Request, res:Response, next:NextFunction) => {
+export const submitRequisition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { requisitionId } = req.params;
 
@@ -462,17 +466,33 @@ export const submitRequisition = async (req:Request, res:Response, next:NextFunc
       throw new ApiError(400, "Only draft can be submitted");
     }
 
+    if (!requisition.totalEstimatedAmount || requisition.totalEstimatedAmount <= 0) {
+      throw new ApiError(400, "Invalid requisition amount");
+    }
+
+    //SKIP APPROVAL FLOW
+    if (requisition.skipApproval) {
+      requisition.status = "APPROVED";
+      requisition.approvalStatus = "APPROVED";
+      requisition.approvedAt = new Date();
+
+      await requisition.save();
+
+      return sendResponse({
+        res,
+        statusCode: 200,
+        message: "Requisition auto-approved (skipApproval enabled)",
+        data: requisition,
+      });
+    }
+
     const amount = requisition.totalEstimatedAmount;
 
     const limits = await TenantAmountLimit.find({
-      minAmount: { $lte: amount },
-      maxAmount: { $gte: amount },
+      // minAmount: { $gte: amount },
+      maxAmount: { $lte: amount },
       isActive: true,
-      $or: [
-        { departments: { $size: 0 } },
-        { departments: requisition.department }
-      ]
-    }).sort({ level: 1, priority: 1 });
+    }).sort({ level: 1, });
 
     if (!limits.length) {
       throw new ApiError(400, "No approval policy found");
@@ -481,20 +501,37 @@ export const submitRequisition = async (req:Request, res:Response, next:NextFunc
     const levelMap = new Map<number, any>();
 
     for (const l of limits) {
-      if (!levelMap.has(l.level)) {
-        levelMap.set(l.level, {
-          level: l.level,
+      const level = l.level;
+
+      if (!levelMap.has(level)) {
+        levelMap.set(level, {
+          level,
           roleIds: [],
-          // approvalsRequired: 1, // configurable later
+          approvalsRequired: l.approvalsRequired || 1,
           approvedBy: [],
           status: "PENDING",
         });
       }
 
-      levelMap.get(l.level).roleIds.push(l.roleId);
+      const levelObj = levelMap.get(level);
+
+      if (!levelObj.roleIds.some((id: any) => id.toString() === l.roleId.toString())) {
+        levelObj.roleIds.push(l.roleId);
+      }
+
+      levelObj.approvalsRequired = Math.max(
+        levelObj.approvalsRequired,
+        l.approvalsRequired || 1
+      );
     }
 
-    const approvalFlow = Array.from(levelMap.values());
+    const approvalFlow = Array.from(levelMap.values()).sort(
+      (a, b) => a.level - b.level
+    );
+
+    if (!approvalFlow.length) {
+      throw new ApiError(400, "Approval flow could not be generated");
+    }
 
     requisition.status = "SUBMITTED";
     requisition.approvalStatus = "IN_PROGRESS";
@@ -515,7 +552,7 @@ export const submitRequisition = async (req:Request, res:Response, next:NextFunc
   }
 };
 
-export const approveRequisition = async (req:Request, res:Response, next:NextFunction) => {
+export const approveRequisition = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { requisitionId } = req.params;
     const { user } = req;
@@ -536,41 +573,81 @@ export const approveRequisition = async (req:Request, res:Response, next:NextFun
       throw new ApiError(400, "Not in approval stage");
     }
 
+    const isAdmin = user?.role === "Admin";
+
+    if (isAdmin) {
+      if (requisition.approvalStatus === "APPROVED") {
+        throw new ApiError(400, "Already fully approved");
+      }
+
+      requisition.status = "APPROVED";
+      requisition.approvalStatus = "APPROVED";
+      requisition.approvedBy = user.userId;
+      requisition.approvedAt = new Date();
+
+      requisition.approvalFlow.forEach((step: any) => {
+        step.status = "APPROVED";
+        step.approvedAt = new Date();
+      });
+
+      await requisition.save();
+
+      return sendResponse({
+        res,
+        statusCode: 200,
+        message: "approved by admin",
+        data: requisition,
+      });
+    }
+
     const currentStep = requisition.approvalFlow.find(
-      (s:any) => s.level === requisition.currentApprovalLevel
+      (s: any) => s.level === requisition.currentApprovalLevel
     );
 
     if (!currentStep) {
       throw new ApiError(400, "Invalid approval step");
     }
 
-    // 🔥 Check user role
-    if (!currentStep.roleIds.includes(user?.roleId)) {
+    const alreadyApprovedCurrent = currentStep.approvedBy.some(
+      (id: any) => id.toString() === user?.userId.toString()
+    );
+
+    if (alreadyApprovedCurrent) {
+      throw new ApiError(400, "Already approved this level");
+    }
+
+    const alreadyApproved = requisition.approvalFlow.some((step: any) =>
+      step.approvedBy.some(
+        (id: any) => id.toString() === user?.userId.toString()
+      )
+    );
+
+    const isAuthorized = currentStep.roleIds.some(
+      (r: any) => r.toString() === user?.roleId.toString()
+    );
+
+    if (!isAuthorized && !isAdmin) {
+      if (alreadyApproved) {
+        throw new ApiError(400, "You already approved in another level");
+      }
       throw new ApiError(403, "Not authorized");
     }
 
-    // 🔥 Prevent duplicate approval
-    if (currentStep.approvedBy.includes(user?.userId)) {
-      throw new ApiError(400, "Already approved");
-    }
-
-    // 🔥 Approve
     currentStep.approvedBy.push(user?.userId);
 
-    // 🔥 Check if enough approvals done
     if (currentStep.approvedBy.length >= currentStep.approvalsRequired) {
       currentStep.status = "APPROVED";
       currentStep.approvedAt = new Date();
 
-      // Move to next level
-      const nextStep = requisition.approvalFlow.find(
-        (s:any) => s.level > currentStep.level
+      const currentIndex = requisition.approvalFlow.findIndex(
+        (s: any) => s.level === currentStep.level
       );
+
+      const nextStep = requisition.approvalFlow[currentIndex + 1];
 
       if (nextStep) {
         requisition.currentApprovalLevel = nextStep.level;
       } else {
-        // FINAL APPROVAL
         requisition.status = "APPROVED";
         requisition.approvalStatus = "APPROVED";
         requisition.approvedBy = user?.userId;
@@ -591,13 +668,18 @@ export const approveRequisition = async (req:Request, res:Response, next:NextFun
   }
 };
 
-export const rejectRequisition = async (req:Request, res:Response, next:NextFunction) => {
+export const rejectRequisition = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { requisitionId } = req.params;
     const { reason } = req.body;
     const { user } = req;
+
     if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+      throw new ApiError(500, "Tenant connection not found");
     }
 
     const Requisition = req.tenantConnection.model("Requisition");
@@ -608,26 +690,78 @@ export const rejectRequisition = async (req:Request, res:Response, next:NextFunc
       throw new ApiError(404, "Requisition not found");
     }
 
+    if (requisition.approvalStatus !== "IN_PROGRESS") {
+      throw new ApiError(400, "Not in approval stage");
+    }
+
+    const isAdmin = user?.role === "Admin";
+
+    if (isAdmin) {
+      requisition.status = "REJECTED";
+      requisition.approvalStatus = "REJECTED";
+      requisition.rejectionReason = reason;
+      requisition.rejectedBy = user.userId;
+      requisition.approvedAt = undefined;
+
+      requisition.approvalFlow.forEach((step: any) => {
+        step.status = "REJECTED";
+        step.rejectedBy = user.userId;
+        step.rejectedAt = new Date();
+        step.rejectionReason = reason;
+      });
+
+      await requisition.save();
+
+      return sendResponse({
+        res,
+        statusCode: 200,
+        message: "Rejected by admin",
+        data: requisition,
+      });
+    }
+
     const currentStep = requisition.approvalFlow.find(
-      (s:any) => s.level === requisition.currentApprovalLevel
+      (s: any) => s.level === requisition.currentApprovalLevel
     );
 
-    if (!currentStep.roleIds.includes(user?.roleId)) {
+    if (!currentStep) {
+      throw new ApiError(400, "Invalid approval step");
+    }
+
+    const isAuthorized = currentStep.roleIds.some(
+      (r: any) => r.toString() === user?.roleId.toString()
+    );
+
+    if (!isAuthorized && !isAdmin) {
       throw new ApiError(403, "Not authorized");
     }
 
+    if (currentStep.status === "REJECTED") {
+      throw new ApiError(400, "Already rejected");
+    }
+
     currentStep.status = "REJECTED";
+    currentStep.rejectedBy = user?.userId;
+    currentStep.rejectedAt = new Date();
+    currentStep.rejectionReason = reason;
 
     requisition.status = "REJECTED";
     requisition.approvalStatus = "REJECTED";
     requisition.rejectionReason = reason;
+    requisition.rejectedBy = user?.userId;
+
+    requisition.approvalFlow.forEach((step: any) => {
+      if (step.level > currentStep.level) {
+        step.status = "PENDING";
+      }
+    });
 
     await requisition.save();
 
     return sendResponse({
       res,
       statusCode: 200,
-      message: "Rejected successfully",
+      message: "Requisition rejected successfully",
       data: requisition,
     });
   } catch (err) {

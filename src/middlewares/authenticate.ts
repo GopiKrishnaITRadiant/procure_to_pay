@@ -9,7 +9,7 @@ import { ENV } from "../config/env";
 interface AuthJwtPayload {
   userId: string;
   tenantId: string;
-  userType: "TENANT"|"PLATFORM";
+  userType: "TENANT"|"PLATFORM"|"VENDOR";
   companyCode:string;
 }
 
@@ -81,6 +81,57 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         role: (user.role as IRole).name,
         permissions: (user.role as IRole).permissions,
         approvalLimit: user.approvalLimit,
+      };
+
+      return next();
+    }
+
+    if (decoded.userType === "VENDOR") {
+
+      if (!decoded.companyCode) {
+        throw new ApiError(401, "companyCode missing");
+      }
+
+      const connection = await getTenantConnection(decoded.companyCode);
+      req.tenantConnection = connection;
+
+      const VendorUser = connection.model("VendorUser");
+      const Vendor = connection.model("Vendor");
+
+      const vendorUser = await VendorUser.findById(decoded.userId)
+        .populate("roleId")
+        .select("-password");
+
+      if (!vendorUser) {
+        throw new ApiError(401, "Vendor user not found");
+      }
+
+      if (!vendorUser.isActive) {
+        throw new ApiError(403, "Vendor user is inactive");
+      }
+
+      const vendor = await Vendor.findById(vendorUser.vendorId);
+
+      if (!vendor) {
+        throw new ApiError(401, "Vendor not found");
+      }
+
+      if (!vendor.isActive || vendor.status !== "ACTIVE") {
+        throw new ApiError(403, "Vendor is not active");
+      }
+
+      const role = vendorUser.roleId as any;
+
+      req.user = {
+        userId: vendorUser._id.toString(),
+        userType: "VENDOR",
+        tenantId: "",
+        companyCode: decoded.companyCode,
+        vendorId: vendor._id.toString(),
+        roleId: role?._id?.toString(),
+        role: role?.name,
+        permissions: role?.permissions || [],
+        // email: vendorUser.email,
       };
 
       return next();

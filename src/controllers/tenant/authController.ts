@@ -172,3 +172,34 @@ export const register = async(req:Request,res:Response,next:NextFunction)=>{
     
   }
 }
+
+export const sendOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.tenantConnection) {
+      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+    }
+
+    const Vendor = req.tenantConnection.model("Vendor");
+  } catch (error) {
+    next(error);
+  }
+};
+export const verifyOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.tenantConnection) {
+      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+    }
+
+    const Vendor = req.tenantConnection.model("Vendor");
+  } catch (error) {
+    next(error);
+  }
+};

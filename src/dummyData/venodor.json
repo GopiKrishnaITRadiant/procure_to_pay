@@ -1,0 +1,410 @@
+[
+  {
+    "vendorCode": "V1001",
+    "name": "ABC Pvt Ltd",
+    "accountGroup": "Z001",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "IN",
+    "currency": "INR",
+    "language": "EN",
+    "address": {
+      "street": "MG Road",
+      "city": "Bangalore",
+      "state": "KA",
+      "postalCode": "560001"
+    },
+    "contact": {
+      "email": "sales@abc.com",
+      "phone": "+919876543210"
+    },
+    "tax": {
+      "gst": "29ABCDE1234F1Z5",
+      "pan": "ABCDE1234F"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX1234",
+      "ifsc": "HDFC0001234",
+      "bankName": "HDFC Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "1000",
+      "reconciliationAccount": "300000",
+      "paymentTerms": "N30"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P100",
+      "orderCurrency": "INR",
+      "incoterms": "FOB"
+    },
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-06-01T10:00:00Z"
+  },
+  {
+    "vendorCode": "V1002",
+    "name": "XYZ Industries",
+    "accountGroup": "Z002",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "IN",
+    "currency": "INR",
+    "language": "EN",
+    "address": {
+      "street": "Industrial Area",
+      "city": "Hyderabad",
+      "state": "TS",
+      "postalCode": "500081"
+    },
+    "contact": {
+      "email": "contact@xyz.com",
+      "phone": "+919812345678"
+    },
+    "tax": {
+      "gst": "36ABCDE5678G1Z2",
+      "pan": "ABCDE5678G"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX5678",
+      "ifsc": "ICIC0005678",
+      "bankName": "ICICI Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "1000",
+      "reconciliationAccount": "300100",
+      "paymentTerms": "N45"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P200",
+      "orderCurrency": "INR",
+      "incoterms": "CIF"
+    },
+    "createdAt": "2024-02-01T10:00:00Z",
+    "updatedAt": "2024-06-05T10:00:00Z"
+  },
+  {
+    "vendorCode": "V1003",
+    "name": "Global Traders Ltd",
+    "accountGroup": "Z003",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "SG",
+    "currency": "SGD",
+    "language": "EN",
+    "address": {
+      "street": "Orchard Road",
+      "city": "Singapore",
+      "state": "SG",
+      "postalCode": "238801"
+    },
+    "contact": {
+      "email": "info@globaltraders.sg",
+      "phone": "+6561234567"
+    },
+    "tax": {
+      "gst": "123456789M"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX9999",
+      "swift": "DBSSSGSG",
+      "bankName": "DBS Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "2000",
+      "reconciliationAccount": "400000",
+      "paymentTerms": "N60"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P300",
+      "orderCurrency": "SGD",
+      "incoterms": "EXW"
+    },
+    "createdAt": "2024-03-01T10:00:00Z",
+    "updatedAt": "2024-06-10T10:00:00Z"
+  },
+  {
+    "vendorCode": "V1004",
+    "name": "Tech Supplies Inc",
+    "accountGroup": "Z004",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "US",
+    "currency": "USD",
+    "language": "EN",
+    "address": {
+      "street": "5th Avenue",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001"
+    },
+    "contact": {
+      "email": "support@techsupplies.com",
+      "phone": "+12125551234"
+    },
+    "tax": {
+      "ein": "12-3456789"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX1111",
+      "swift": "BOFAUS3N",
+      "bankName": "Bank of America"
+    },
+    "companyCodeData": {
+      "companyCode": "3000",
+      "reconciliationAccount": "500000",
+      "paymentTerms": "N30"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P400",
+      "orderCurrency": "USD",
+      "incoterms": "DAP"
+    },
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-06-12T10:00:00Z"
+  },
+  {
+    "vendorCode": "V1005",
+    "name": "Aussie Manufacturing",
+    "accountGroup": "Z005",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "AU",
+    "currency": "AUD",
+    "language": "EN",
+    "address": {
+      "street": "George Street",
+      "city": "Sydney",
+      "state": "NSW",
+      "postalCode": "2000"
+    },
+    "contact": {
+      "email": "sales@aussiemfg.au",
+      "phone": "+61234567890"
+    },
+    "tax": {
+      "abn": "51824753556"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX2222",
+      "swift": "ANZBAU3M",
+      "bankName": "ANZ Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "4000",
+      "reconciliationAccount": "600000",
+      "paymentTerms": "N45"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P500",
+      "orderCurrency": "AUD",
+      "incoterms": "FOB"
+    },
+    "createdAt": "2024-04-01T10:00:00Z",
+    "updatedAt": "2024-06-15T10:00:00Z"
+  },
+
+  {
+    "vendorCode": "V1006",
+    "name": "Delta Electronics",
+    "accountGroup": "Z001",
+    "vendorType": "COMPANY",
+    "status": "BLOCKED",
+    "country": "IN",
+    "currency": "INR",
+    "language": "EN",
+    "address": {
+      "street": "Ring Road",
+      "city": "Delhi",
+      "state": "DL",
+      "postalCode": "110001"
+    },
+    "contact": {
+      "email": "info@delta.in",
+      "phone": "+919900112233"
+    },
+    "tax": {
+      "gst": "07ABCDE9999A1Z5",
+      "pan": "ABCDE9999A"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX3333",
+      "ifsc": "SBIN0003333",
+      "bankName": "State Bank of India"
+    },
+    "companyCodeData": {
+      "companyCode": "1000",
+      "reconciliationAccount": "300200",
+      "paymentTerms": "N15"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P100",
+      "orderCurrency": "INR",
+      "incoterms": "FOB"
+    },
+    "createdAt": "2024-01-10T10:00:00Z",
+    "updatedAt": "2024-06-18T10:00:00Z"
+  },
+
+  {
+    "vendorCode": "V1007",
+    "name": "Sri Lanka Traders",
+    "accountGroup": "Z006",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "LK",
+    "currency": "LKR",
+    "language": "EN",
+    "address": {
+      "street": "Colombo Street",
+      "city": "Colombo",
+      "state": "WP",
+      "postalCode": "00100"
+    },
+    "contact": {
+      "email": "contact@sltraders.lk",
+      "phone": "+94112345678"
+    },
+    "tax": {
+      "tin": "123456789"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX4444",
+      "swift": "BCEYLKLX",
+      "bankName": "Bank of Ceylon"
+    },
+    "companyCodeData": {
+      "companyCode": "5000",
+      "reconciliationAccount": "700000",
+      "paymentTerms": "N30"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P600",
+      "orderCurrency": "LKR",
+      "incoterms": "EXW"
+    },
+    "createdAt": "2024-05-01T10:00:00Z",
+    "updatedAt": "2024-06-20T10:00:00Z"
+  },
+
+  {
+    "vendorCode": "V1008",
+    "name": "Canada Supplies Ltd",
+    "accountGroup": "Z007",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "CA",
+    "currency": "CAD",
+    "language": "EN",
+    "address": {
+      "street": "Bay Street",
+      "city": "Toronto",
+      "state": "ON",
+      "postalCode": "M5J2N8"
+    },
+    "contact": {
+      "email": "info@canadasupplies.ca",
+      "phone": "+14165551234"
+    },
+    "tax": {
+      "bn": "123456789"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX5555",
+      "swift": "TDOMCATTTOR",
+      "bankName": "TD Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "6000",
+      "reconciliationAccount": "800000",
+      "paymentTerms": "N30"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P700",
+      "orderCurrency": "CAD",
+      "incoterms": "DAP"
+    },
+    "createdAt": "2024-02-20T10:00:00Z",
+    "updatedAt": "2024-06-22T10:00:00Z"
+  },
+
+  {
+    "vendorCode": "V1009",
+    "name": "UK Industrial Ltd",
+    "accountGroup": "Z008",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "GB",
+    "currency": "GBP",
+    "language": "EN",
+    "address": {
+      "street": "Oxford Street",
+      "city": "London",
+      "state": "LN",
+      "postalCode": "W1D1BS"
+    },
+    "contact": {
+      "email": "sales@ukindustrial.co.uk",
+      "phone": "+442071234567"
+    },
+    "tax": {
+      "vat": "GB123456789"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX6666",
+      "swift": "BARCGB22",
+      "bankName": "Barclays Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "7000",
+      "reconciliationAccount": "900000",
+      "paymentTerms": "N60"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P800",
+      "orderCurrency": "GBP",
+      "incoterms": "FOB"
+    },
+    "createdAt": "2024-03-15T10:00:00Z",
+    "updatedAt": "2024-06-25T10:00:00Z"
+  },
+
+  {
+    "vendorCode": "V1010",
+    "name": "Bangladesh Textiles",
+    "accountGroup": "Z009",
+    "vendorType": "COMPANY",
+    "status": "ACTIVE",
+    "country": "BD",
+    "currency": "BDT",
+    "language": "EN",
+    "address": {
+      "street": "Dhaka Industrial Zone",
+      "city": "Dhaka",
+      "state": "DH",
+      "postalCode": "1207"
+    },
+    "contact": {
+      "email": "info@bdtextiles.com",
+      "phone": "+8801712345678"
+    },
+    "tax": {
+      "tin": "1234567890123"
+    },
+    "bank": {
+      "accountNumber": "XXXXXX7777",
+      "swift": "DBBLBDDH",
+      "bankName": "Dutch-Bangla Bank"
+    },
+    "companyCodeData": {
+      "companyCode": "8000",
+      "reconciliationAccount": "950000",
+      "paymentTerms": "N45"
+    },
+    "purchasingData": {
+      "purchasingOrg": "P900",
+      "orderCurrency": "BDT",
+      "incoterms": "CIF"
+    },
+    "createdAt": "2024-04-10T10:00:00Z",
+    "updatedAt": "2024-06-28T10:00:00Z"
+  }
+]

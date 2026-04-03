@@ -1,230 +1,233 @@
 import mongoose from "mongoose";
 import { integrationModel } from "../../src/models/integrationModel";
-import { IntegrationTemplate } from "../../src/models/integrationTemplateModel";
+import { IntegrationTemplateModel } from "../../src/models/integrationTemplateModel";
+import { odataV2fieldMappings, odataV4fieldMappings, restFieldMappings, seedIntegrationsData } from "../../src/utils/constants";
 
-const integrations = [
-  {
-    name: "SAP ERP",
-    code: "SAP",
-    category: "ERP",
-    description: "Enterprise Resource Planning integration",
-    supportedProtocols: ["odata", "rest"],
-    isActive: true,
-    supportedEnvironments: ["dev", "staging", "prod"],
-  },
-  {
-    name: "Azure Active Directory",
-    code: "AZURE_AD",
-    category: "AUTH",
-    description: "Authentication via Azure AD",
-    supportedProtocols: ["rest"],
-    isActive: true,
-    supportedEnvironments: ["dev", "staging", "prod"],
-  },
-  {
-    name: "AWS S3 Storage",
-    code: "S3",
-    category: "STORAGE",
-    description: "Cloud storage integration with AWS S3",
-    supportedProtocols: ["rest"],
-    isActive: true,
-    supportedEnvironments: ["dev", "staging", "prod"],
-  },
-  {
-    name: "Stripe Payment Gateway",
-    code: "STRIPE",
-    category: "PAYMENT",
-    description: "Payment gateway integration with Stripe",
-    supportedProtocols: ["rest"],
-    isActive: true,
-    supportedEnvironments: ["dev", "staging", "prod"],
-  },
-  {
-    name: "Email Provider",
-    code: "EMAIL_PROVIDER",
-    category: "COMMUNICATION",
-    description: "Send emails using providers like SES / SendGrid",
-    supportedProtocols: ["rest"],
-    isActive: true,
-    supportedEnvironments: ["dev", "staging", "prod"],
-  },
-];
+type BaseTemplate = {
+  name: string;
+  version: string;
+  protocol: "odata" | "rest";
+  resources: any;
+  fieldMappings: Record<string, any>;
+  isActive: boolean;
+};
 
-const createDefaultTemplates = (integrationCode: string) => {
+type ODataTemplate = BaseTemplate & {
+  protocol: "odata";
+  odataVersion: "v2" | "v4";
+};
 
-  if (integrationCode !== "SAP") {
-    return [
-      {
-        name: integrationCode,
-        version: "1.0.0",
-        protocol: "rest",
-        resources: {},
-        fieldMappings: {},
-        isActive: true
-      }
-    ];
+type RestTemplate = BaseTemplate & {
+  protocol: "rest";
+};
+
+type TemplateType = ODataTemplate | RestTemplate;
+
+const createDefaultTemplates = (integration: any): TemplateType[] => {
+  if (integration.mode !== "TEMPLATE_BASED") {
+    return [];
   }
 
-  const sapOdataTemplate = {
-    name: "sap-s4hana-procurement",
+  const sapOdataV4Template: ODataTemplate = {
+    name: "sap-s4hana-odata-v4",
     version: "1.0.0",
     protocol: "odata",
     odataVersion: "v4",
 
     resources: {
-
-      purchaseOrders: {
+      purchaseOrder: {
         serviceName: "API_PURCHASEORDER_2",
         keys: ["PurchaseOrder"],
-
         endpoints: [
           { operation: "list", method: "GET", entitySet: "PurchaseOrder" },
-          { operation: "get", method: "GET", entitySet: "PurchaseOrder", expand: ["to_PurchaseOrderItem"] },
+          {
+            operation: "get",
+            method: "GET",
+            entitySet: "PurchaseOrder",
+            expand: ["to_PurchaseOrderItem"],
+          },
           { operation: "create", method: "POST", entitySet: "PurchaseOrder" },
-          { operation: "update", method: "PATCH", entitySet: "PurchaseOrder" }
-        ]
+          { operation: "update", method: "PATCH", entitySet: "PurchaseOrder" },
+        ],
       },
 
       purchaseOrderItems: {
         serviceName: "API_PURCHASEORDER_2",
         keys: ["PurchaseOrder", "PurchaseOrderItem"],
-
         endpoints: [
           { operation: "list", method: "GET", entitySet: "PurchaseOrderItem" },
-          { operation: "get", method: "GET", entitySet: "PurchaseOrderItem" }
-        ]
+        ],
       },
 
-      goodsReceipts: {
-        serviceName: "API_MATERIAL_DOCUMENT_SRV",
-        keys: ["MaterialDocument"],
-
+      vendors: {
+        serviceName: "API_BUSINESS_PARTNER",
+        keys: ["BusinessPartner"],
         endpoints: [
-          { operation: "list", method: "GET", entitySet: "MaterialDocument" },
-          { operation: "create", method: "POST", entitySet: "MaterialDocument" }
-        ]
+          { operation: "list", method: "GET", entitySet: "A_BusinessPartner" },
+        ],
       },
 
-      supplierInvoices: {
+      invoices: {
         serviceName: "API_SUPPLIERINVOICE_PROCESS_SRV",
         keys: ["SupplierInvoice"],
-
         endpoints: [
-          { operation: "list", method: "GET", entitySet: "SupplierInvoice" },
-          { operation: "create", method: "POST", entitySet: "SupplierInvoice" }
-        ]
+          { operation: "list", method: "GET", entitySet: "A_SupplierInvoice" },
+          { operation: "create", method: "POST", entitySet: "A_SupplierInvoice" },
+        ],
       },
 
       payments: {
         serviceName: "API_JOURNALENTRY_SRV",
         keys: ["JournalEntry"],
-
         endpoints: [
-          { operation: "list", method: "GET", entitySet: "JournalEntry" },
-          { operation: "create", method: "POST", entitySet: "JournalEntry" }
-        ]
+          { operation: "list", method: "GET", entitySet: "A_JournalEntry" },
+        ],
       },
-
-      documents: {
-        serviceName: "API_CV_ATTACHMENT_SRV",
-        keys: ["DocumentInfoRecord"],
-
-        endpoints: [
-          { operation: "list", method: "GET", entitySet: "DocumentInfoRecord" },
-          { operation: "create", method: "POST", entitySet: "DocumentInfoRecord" }
-        ]
-      }
-
     },
 
-    fieldMappings: {},
-    isActive: true
+    fieldMappings: odataV4fieldMappings,
+    isActive: true,
   };
 
+  const sapOdataV2Template: ODataTemplate = {
+    name: "sap-odata-v2",
+    version: "1.0.0",
+    protocol: "odata",
+    odataVersion: "v2",
 
-  const sapRestTemplate = {
+    resources: {
+      purchaseOrders: {
+        serviceName: "API_PURCHASEORDER",
+        keys: ["PurchaseOrder"],
+        endpoints: [
+          { operation: "list", method: "GET", entitySet: "PurchaseOrderSet" },
+          {
+            operation: "get",
+            method: "GET",
+            entitySet: "PurchaseOrderSet",
+            expand: ["PurchaseOrderItemSet"],
+          },
+          { operation: "create", method: "POST", entitySet: "PurchaseOrderSet" },
+          { operation: "update", method: "PUT", entitySet: "PurchaseOrderSet" },
+        ],
+      },
+
+      purchaseOrderItems: {
+        serviceName: "API_PURCHASEORDER",
+        keys: ["PurchaseOrder", "PurchaseOrderItem"],
+        endpoints: [
+          { operation: "list", method: "GET", entitySet: "PurchaseOrderItemSet" },
+        ],
+      },
+
+      vendors: {
+        serviceName: "API_VENDOR",
+        keys: ["Vendor"],
+        endpoints: [
+          { operation: "list", method: "GET", entitySet: "VendorSet" },
+        ],
+      },
+
+      invoices: {
+        serviceName: "API_INVOICE",
+        keys: ["Invoice"],
+        endpoints: [
+          { operation: "list", method: "GET", entitySet: "InvoiceSet" },
+          { operation: "create", method: "POST", entitySet: "InvoiceSet" },
+        ],
+      },
+
+      payments: {
+        serviceName: "API_PAYMENT",
+        keys: ["Payment"],
+        endpoints: [
+          { operation: "list", method: "GET", entitySet: "PaymentSet" },
+        ],
+      },
+    },
+
+    fieldMappings: odataV2fieldMappings,
+    isActive: true,
+  };
+
+  const sapRestTemplate: RestTemplate = {
     name: "sap-rest-template",
     version: "1.0.0",
     protocol: "rest",
 
     resources: {
-
       purchaseOrders: {
         endpoints: [
           { operation: "list", method: "GET", path: "/api/purchase-orders" },
           { operation: "get", method: "GET", path: "/api/purchase-orders/{id}" },
-          { operation: "create", method: "POST", path: "/api/purchase-orders" },
-          { operation: "update", method: "PATCH", path: "/api/purchase-orders/{id}" }
-        ]
+        ],
       },
 
-      goodsReceipts: {
-        endpoints: [
-          { operation: "list", method: "GET", path: "/api/goods-receipts" },
-          { operation: "create", method: "POST", path: "/api/goods-receipts" }
-        ]
+      vendors: {
+        endpoints: [{ operation: "list", method: "GET", path: "/api/vendors" }],
       },
 
-      attachments: {
-        endpoints: [
-          { operation: "list", method: "GET", path: "/api/attachments" },
-          { operation: "get", method: "GET", path: "/api/attachments/{id}" },
-          { operation: "create", method: "POST", path: "/api/attachments" },
-          { operation: "delete", method: "DELETE", path: "/api/attachments/{id}" }
-        ]
-      }
+      invoices: {
+        endpoints: [{ operation: "list", method: "GET", path: "/api/invoices" }],
+      },
 
+      payments: {
+        endpoints: [{ operation: "list", method: "GET", path: "/api/payments" }],
+      },
     },
 
-    fieldMappings: {},
-    isActive: true
+    fieldMappings: restFieldMappings,
+    isActive: true,
   };
 
-  return [sapOdataTemplate, sapRestTemplate];
+  return [sapOdataV4Template, sapOdataV2Template, sapRestTemplate];
 };
 
 export const seedIntegrations = async () => {
   try {
-
-    for (const integration of integrations) {
+    for (const integration of seedIntegrationsData) {
 
       const savedIntegration = await integrationModel.findOneAndUpdate(
         { code: integration.code },
         integration,
-        { upsert: true, returnDocument:'after' }
+        { upsert: true, new: true }
       );
 
-      const templates = createDefaultTemplates(integration.code);
+      const templates = createDefaultTemplates(integration);
+
+      if (!templates.length) continue;
 
       for (const template of templates) {
 
-        await IntegrationTemplate.updateOne(
-          {
-            integrationId: savedIntegration._id,
-            version: template.version,
-            protocol: template.protocol
-          },
+        const filter: any = {
+          integrationId: savedIntegration._id,
+          version: template.version,
+          protocol: template.protocol,
+        };
+
+        //Only for ODATA
+        if (template.protocol === "odata") {
+          filter.odataVersion = template.odataVersion;
+        }
+
+        await IntegrationTemplateModel.updateOne(
+          filter,
           {
             $set: {
               ...template,
-              integrationId: savedIntegration._id
-            }
+              integrationId: savedIntegration._id,
+            },
           },
           { upsert: true }
         );
-
       }
     }
 
-    console.log("Integrations and templates seeded successfully");
+    console.log("Integrations & templates seeded successfully");
 
   } catch (error) {
-
     console.error("Seeder failed:", error);
-
   } finally {
-
     await mongoose.connection.close();
-
   }
 };
