@@ -9,6 +9,8 @@ export const errorMiddleware = (
   next: NextFunction
 ) => {
 
+  console.log('req.bodddd',req.originalUrl,err)
+
   let statusCode = err.statusCode ?? 500;
   let message = err.message ?? "Internal Server Error";
   let errorCode = err.errorCode ?? "INTERNAL_ERROR";
@@ -70,16 +72,6 @@ export const errorMiddleware = (
     message = "Token expired";
     errorCode = "TOKEN_EXPIRED";
   }
-
-  console.error("ERROR LOG:", {
-    message: err.message,
-    stack: err.stack,
-    route: req.originalUrl,
-    method: req.method,
-    params: req.params,
-    query: req.query,
-    body: req.body,
-  });
 
   /**
    * 🔹 Hide internal errors in production

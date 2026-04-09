@@ -1,13 +1,11 @@
-// src/payments/stripeHandler.ts
-
 import Stripe from "stripe";
-import { PaymentAction, StripeCredentials } from "./types";
+import { PaymentAction, StripeCredentials } from "../types";
 
 export class StripeHandler {
-  private stripe: Stripe;
+  private stripe: any
 
   constructor(private credentials: StripeCredentials) {
-    this.stripe = new Stripe(credentials.secretKey, {
+    this.stripe = new Stripe(this.credentials.secretKey, {
       apiVersion: "2024-06-20",
     });
   }
@@ -44,3 +42,4 @@ export class StripeHandler {
     }
   }
 }
+//code committed not pushed

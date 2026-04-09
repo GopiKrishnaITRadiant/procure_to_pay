@@ -3,6 +3,7 @@ import { Schema, Types } from "mongoose";
 export interface IVendorUser {
   _id: Types.ObjectId;
   vendorId: Types.ObjectId;
+  tenantId: Types.ObjectId;
   name: string;
   email: string;
   password?: string;
@@ -26,6 +27,12 @@ export const VendorUserSchema = new Schema<IVendorUser>(
       type: Schema.Types.ObjectId,
       ref: "Vendor",
       required: true,
+    },
+
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: "Tenant",
+      // required: true,
     },
 
     name: String,

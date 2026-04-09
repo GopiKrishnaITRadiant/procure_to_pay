@@ -4,6 +4,6 @@ const routes = Router();
 
 routes.post("/",registerVendor)
 routes.post("/",verifyVendorEmail)
-routes.post("/",loginVendor)
+routes.post("/login",loginVendor)
 
 export default routes

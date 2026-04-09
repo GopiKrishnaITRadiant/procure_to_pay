@@ -11,7 +11,7 @@ import { sanitizeCredentials } from "../../utils/sanitizeCredentials";
 import { ENV } from "../../config/env";
 import { integrationModel } from "../../models/integrationModel";
 import { IntegrationTemplateModel } from "../../models/integrationTemplateModel";
-import { decrypt } from "../../utils/cryptoUtil";
+import { executeIntegration } from "../../services/sdkIntegrationService";
 
 
 export const createTenantIntegration = async (
@@ -250,7 +250,7 @@ export const updateTenantIntegration = async (
 
     if (name !== undefined) tenantIntegration.name = name;
     if (environment !== undefined) tenantIntegration.environment = environment;
-    if (resourceOverrides !== undefined)
+    if (resourceOverrides !== undefined&& integrationDoc.mode === "TEMPLATE_BASED")
       tenantIntegration.resourceOverrides = resourceOverrides;
     if (typeof isEnabled === "boolean")
       tenantIntegration.isEnabled = isEnabled;
@@ -400,101 +400,110 @@ export const getTenantIntegration = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found");
-    }
+    const { tenantIntegrationId,action,payload } = req.body;
+    // if (!req.tenantConnection) {
+    //   throw new ApiError(500, "Tenant connection not found");
+    // }
 
-    if (!req.user?.tenantId) {
-      throw new ApiError(401, "Tenant not identified");
-    }
+    // if (!req.user?.tenantId) {
+    //   throw new ApiError(401, "Tenant not identified");
+    // }
 
-    const TenantIntegration =
-      req.tenantConnection.model('TenantIntegration')
+    // const TenantIntegration =
+    //   req.tenantConnection.model('TenantIntegration')
 
-    const tenantId = req.user.tenantId;
+    // const tenantId = req.user.tenantId;
 
-    const { environment } = req.query;
+    // const { environment } = req.query;
 
-    const query: any = { tenantId };
+    // const query: any = { tenantId };
 
-    if (environment) {
-      query.environment = environment;
-    }
+    // if (environment) {
+    //   query.environment = environment;
+    // }
 
-    const tenantIntegrations = await TenantIntegration.find(query).lean();
+    // const tenantIntegrations = await TenantIntegration.find(query).lean();
 
-    if (!tenantIntegrations.length) {
-      return sendResponse({
-        res,
-        statusCode: 200,
-        message: "No integrations found",
-        data: [],
-      });
-    }
+    // if (!tenantIntegrations.length) {
+    //   return sendResponse({
+    //     res,
+    //     statusCode: 200,
+    //     message: "No integrations found",
+    //     data: [],
+    //   });
+    // }
 
-    const ids = [
-      ...new Set(
-        tenantIntegrations.map((i: any) =>
-          i.integrationId.toString()
-        )
-      ),
-    ];
+    // const ids = [
+    //   ...new Set(
+    //     tenantIntegrations.map((i: any) =>
+    //       i.integrationId.toString()
+    //     )
+    //   ),
+    // ];
 
-    const templateIds = [
-      ...new Set(
-        tenantIntegrations
-          .map((i: any) => i.templateId)
-          .filter(Boolean)
-          .map((id: any) => id.toString())
-      ),
-    ];
+    // const templateIds = [
+    //   ...new Set(
+    //     tenantIntegrations
+    //       .map((i: any) => i.templateId)
+    //       .filter(Boolean)
+    //       .map((id: any) => id.toString())
+    //   ),
+    // ];
 
-    const masterIntegrations = await integrationModel.find({
-      _id: { $in: ids },
-    })
-      .select("name code category description")
-      .lean();
+    // const masterIntegrations = await integrationModel.find({
+    //   _id: { $in: ids },
+    // })
+    //   .select("name code category description")
+    //   .lean();
 
-    const integrationMap = new Map(
-      masterIntegrations.map((i: any) => [
-        i._id.toString(),
-        i,
-      ])
-    );
+    // const integrationMap = new Map(
+    //   masterIntegrations.map((i: any) => [
+    //     i._id.toString(),
+    //     i,
+    //   ])
+    // );
 
-    const integrationTemplates = await IntegrationTemplateModel.find({
-      _id: { $in: templateIds },
-    }).lean();
+    // const integrationTemplates = await IntegrationTemplateModel.find({
+    //   _id: { $in: templateIds },
+    // }).lean();
 
-    const templateMap = new Map(
-      integrationTemplates.map((t: any) => [
-        t._id.toString(),
-        t,
-      ])
-    );
+    // const templateMap = new Map(
+    //   integrationTemplates.map((t: any) => [
+    //     t._id.toString(),
+    //     t,
+    //   ])
+    // );
 
-    const result = tenantIntegrations.map((item: any) => {
-      const master = integrationMap.get(
-        item.integrationId?.toString()
-      );
+    // const result = tenantIntegrations.map((item: any) => {
+    //   const master = integrationMap.get(
+    //     item.integrationId?.toString()
+    //   );
 
-      const template = item.templateId
-        ? templateMap.get(item.templateId.toString())
-        : null;
+    //   const template = item.templateId
+    //     ? templateMap.get(item.templateId.toString())
+    //     : null;
 
-      if (item.credentials) {
-        delete item.credentials.password;
-        delete item.credentials.clientSecret;
-        delete item.credentials.secretAccessKey;
-        delete item.credentials.apiKey;
-      }
+    //   if (item.credentials) {
+    //     delete item.credentials.password;
+    //     delete item.credentials.clientSecret;
+    //     delete item.credentials.secretAccessKey;
+    //     delete item.credentials.apiKey;
+    //   }
 
-      return {
-        ...item,
-        integration: master || null,
-        template: template || null,
-      };
-    });
+    //   return {
+    //     ...item,
+    //     integration: master || null,
+    //     template: template || null,
+    //   };
+    // });
+
+    const result = await executeIntegration(
+    req.tenantConnection,
+    tenantIntegrationId,
+    action,
+    payload
+  );
+
 
     return sendResponse({
       res,

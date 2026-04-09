@@ -116,8 +116,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         throw new ApiError(401, "Vendor not found");
       }
 
-      if (!vendor.isActive || vendor.status !== "ACTIVE") {
-        throw new ApiError(403, "Vendor is not active");
+      if (!vendor.isActive || vendor.status !== "APPROVED") {
+        throw new ApiError(403, "Vendor is not approved");
       }
 
       const role = vendorUser.roleId as any;
@@ -125,7 +125,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       req.user = {
         userId: vendorUser._id.toString(),
         userType: "VENDOR",
-        tenantId: "",
+        tenantId: vendorUser.tenantId,
         companyCode: decoded.companyCode,
         vendorId: vendor._id.toString(),
         roleId: role?._id?.toString(),

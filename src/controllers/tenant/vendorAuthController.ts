@@ -58,6 +58,7 @@ export const registerVendor = async (
       vendorType: "EXTERNAL",
       onboardingSource: "SELF",
       status: "DRAFT",
+      tenantId,
 
       email,
       phone,
@@ -137,20 +138,24 @@ export const loginVendor = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, tenantId } = req.body;
 
-    if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+    const tenantDoc = await tenantModel.findById(tenantId)
+    
+    if(!tenantDoc){
+      throw new ApiError(404,'Tenant not found')
     }
+    
+    const connection = await getTenantConnection(tenantDoc.companyCode);
 
     if (!email || !password) {
       throw new ApiError(400, "Email and password are required", "VALIDATION_ERROR");
     }
 
-    const VendorUser = req.tenantConnection.model("VendorUser");
-    const Vendor = req.tenantConnection.model("Vendor");
+    const VendorUser = connection.model("VendorUser");
+    const Vendor = connection.model("Vendor");
 
-    const user = await VendorUser.findOne({ email });
+    const user = await VendorUser.findOne({ email }).select("+password");
 
     if (!user) {
       throw new ApiError(401, "Invalid credentials", "INVALID_LOGIN");
@@ -178,7 +183,7 @@ export const loginVendor = async (
       throw new ApiError(404, "Vendor not found", "VENDOR_NOT_FOUND");
     }
 
-    if (!vendor.isActive || vendor.status !== "APPROVED") {
+    if (vendor.status !== "APPROVED") {
       throw new ApiError(
         403,
         "Vendor is not approved. Contact admin",
@@ -190,8 +195,10 @@ export const loginVendor = async (
       {
         vendorUserId: user._id,
         vendorId: vendor._id,
+        userId: user._id,
         email: user.email,
-        type: "VENDOR",
+        userType: "VENDOR",
+        companyCode:tenantDoc.companyCode,
       },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }

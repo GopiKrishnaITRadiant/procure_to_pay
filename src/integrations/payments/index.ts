@@ -1,7 +1,5 @@
-// src/payments/index.ts
-
-import { StripeHandler } from "./stripeHandler";
-import { RazorpayHandler } from "./razorpayHandler";
+import { StripeHandler } from "./handlers/stripeHandler";
+import { RazorpayHandler } from "./handlers/razorpayHandler";
 import {
   PaymentAction,
   PaymentCredentials,
@@ -33,7 +31,7 @@ export class PaymentHandler {
         );
 
       default:
-        throw new Error(`Unsupported provider: ${credentials.provider}`);
+        throw new Error(`Unsupported provider: ${credentials}`);
     }
   }
 }

@@ -39,11 +39,9 @@ export const defaultApprovalLimits = [
 export const defaultRoles = [
   {
     name: "Admin",
-    permissions: [
-      PERMISSIONS.TENANT_ADMIN.ACCESS_ALL,
-    ],
+    permissions: [PERMISSIONS.TENANT_ADMIN.ACCESS_ALL],
     isActive: true,
-    level: Number.MAX_SAFE_INTEGER
+    level: Number.MAX_SAFE_INTEGER,
   },
   {
     name: "Requester",
@@ -54,7 +52,7 @@ export const defaultRoles = [
       PERMISSIONS.PURCHASE_REQUEST.READ_OWN,
       PERMISSIONS.PURCHASE_REQUEST.DELETE,
     ],
-    isActive: true
+    isActive: true,
   },
   {
     name: "Manager",
@@ -64,7 +62,7 @@ export const defaultRoles = [
       PERMISSIONS.PO.CANCEL,
     ],
     isActive: true,
-    level: 1
+    level: 1,
   },
   {
     name: "Buyer",
@@ -75,7 +73,7 @@ export const defaultRoles = [
       PERMISSIONS.VENDOR.READ_ALL,
     ],
     isActive: true,
-    level: 2
+    level: 2,
   },
   {
     name: "Finance",
@@ -85,7 +83,7 @@ export const defaultRoles = [
       PERMISSIONS.PAYMENT.RELEASE,
     ],
     isActive: true,
-    level: 3
+    level: 3,
   },
 ];
 
@@ -97,7 +95,7 @@ export const vendorRole = {
     PERMISSIONS.PO.APPROVE,
     PERMISSIONS.PO.REJECT,
   ],
-  isActive: true
+  isActive: true,
 };
 
 export default defaultRoles;
@@ -163,47 +161,43 @@ export const defaultMaterials = [
     price: 1000,
     currency: "USD",
     isActive: true,
-    category: "Active Pharmaceutical Ingredient (API)"
+    category: "Active Pharmaceutical Ingredient (API)",
   },
   {
-
     materialCode: "EXC-TALC",
     description: "Talc Powder - Exipient",
     unitOfMeasure: "KG",
     price: 50,
     currency: "USD",
     isActive: true,
-    category: "Excipients"
+    category: "Excipients",
   },
   {
-
     materialCode: "PACK-BOTTLE-100ML",
     description: "Amber Bottle 100ml",
     unitOfMeasure: "EA",
     price: 0.5,
     currency: "USD",
     isActive: true,
-    category: "Packaging Materials"
+    category: "Packaging Materials",
   },
   {
-
     materialCode: "LAB-ETHANOL-99",
     description: "Ethanol 99% Laboratory Reagent",
     unitOfMeasure: "L",
     price: 25,
     currency: "USD",
     isActive: true,
-    category: "Laboratory Chemicals"
+    category: "Laboratory Chemicals",
   },
   {
-
     materialCode: "PPE-GLOVES",
     description: "Nitrile Gloves",
     unitOfMeasure: "BOX",
     price: 10,
     currency: "USD",
     isActive: true,
-    category: "Medical Devices / Instruments"
+    category: "Medical Devices / Instruments",
   },
 ];
 
@@ -217,7 +211,7 @@ const VALID_CODES = [
   "RAZORPAY",
   "S3_EMAIL_PROVIDER",
   "GOOGLE_OAUTH",
-]
+];
 
 export const seedIntegrationsData = [
   {
@@ -434,7 +428,7 @@ export const odataV4fieldMappings = {
     { externalField: "PurchasingOrganization", internalField: "purchasingOrg" },
     { externalField: "PurchasingGroup", internalField: "purchasingGroup" },
     { externalField: "DocumentCurrency", internalField: "currency" },
-    { externalField: "PurchaseOrderDate", internalField: "orderDate" }
+    { externalField: "PurchaseOrderDate", internalField: "orderDate" },
   ],
 
   // Purchase Order Items
@@ -446,7 +440,7 @@ export const odataV4fieldMappings = {
     { externalField: "NetPrice", internalField: "price" },
     { externalField: "Currency", internalField: "currency" },
     { externalField: "DeliveryDate", internalField: "deliveryDate" },
-    { externalField: "Plant", internalField: "plant" }
+    { externalField: "Plant", internalField: "plant" },
   ],
 
   // Vendors / Business Partners
@@ -457,7 +451,7 @@ export const odataV4fieldMappings = {
     { externalField: "Country", internalField: "country" },
     { externalField: "TaxNumber", internalField: "taxNumber" },
     { externalField: "Currency", internalField: "currency" },
-    { externalField: "Email", internalField: "email" }
+    { externalField: "Email", internalField: "email" },
   ],
 
   // Invoices / Supplier Invoices
@@ -467,7 +461,7 @@ export const odataV4fieldMappings = {
     { externalField: "InvoiceDate", internalField: "date" },
     { externalField: "InvoiceAmount", internalField: "amount" },
     { externalField: "Currency", internalField: "currency" },
-    { externalField: "PaymentTerms", internalField: "paymentTerms" }
+    { externalField: "PaymentTerms", internalField: "paymentTerms" },
   ],
 
   // Payments / Journal Entries
@@ -477,8 +471,8 @@ export const odataV4fieldMappings = {
     { externalField: "PaymentAmount", internalField: "amount" },
     { externalField: "PaymentMethod", internalField: "method" },
     { externalField: "DocumentDate", internalField: "date" },
-    { externalField: "Currency", internalField: "currency" }
-  ]
+    { externalField: "Currency", internalField: "currency" },
+  ],
 };
 
 export const odataV2fieldMappings = {
@@ -494,7 +488,7 @@ export const odataV2fieldMappings = {
     { externalField: "PurchOrg", internalField: "purchasingOrg" },
     { externalField: "PurchGroup", internalField: "purchasingGroup" },
     { externalField: "Currency", internalField: "currency" },
-    { externalField: "DocDate", internalField: "orderDate" }
+    { externalField: "DocDate", internalField: "orderDate" },
   ],
 
   // Purchase Order Items
@@ -506,7 +500,7 @@ export const odataV2fieldMappings = {
     { externalField: "NetPrice", internalField: "price" },
     { externalField: "Currency", internalField: "currency" },
     { externalField: "DeliveryDate", internalField: "deliveryDate" },
-    { externalField: "Plant", internalField: "plant" }
+    { externalField: "Plant", internalField: "plant" },
   ],
 
   // Vendors
@@ -517,7 +511,7 @@ export const odataV2fieldMappings = {
     { externalField: "Country", internalField: "country" },
     { externalField: "TaxNo", internalField: "taxNumber" },
     { externalField: "Currency", internalField: "currency" },
-    { externalField: "Email", internalField: "email" }
+    { externalField: "Email", internalField: "email" },
   ],
 
   // Invoices
@@ -527,7 +521,7 @@ export const odataV2fieldMappings = {
     { externalField: "InvoiceDate", internalField: "date" },
     { externalField: "Amount", internalField: "amount" },
     { externalField: "Currency", internalField: "currency" },
-    { externalField: "PaymentTerms", internalField: "paymentTerms" }
+    { externalField: "PaymentTerms", internalField: "paymentTerms" },
   ],
 
   // Payments
@@ -537,8 +531,8 @@ export const odataV2fieldMappings = {
     { externalField: "Amount", internalField: "amount" },
     { externalField: "PaymentMethod", internalField: "method" },
     { externalField: "PostingDate", internalField: "date" },
-    { externalField: "Currency", internalField: "currency" }
-  ]
+    { externalField: "Currency", internalField: "currency" },
+  ],
 };
 
 export const restFieldMappings = {
@@ -554,7 +548,7 @@ export const restFieldMappings = {
     { externalField: "purchasingOrg", internalField: "purchasingOrg" },
     { externalField: "purchasingGroup", internalField: "purchasingGroup" },
     { externalField: "currency", internalField: "currency" },
-    { externalField: "orderDate", internalField: "orderDate" }
+    { externalField: "orderDate", internalField: "orderDate" },
   ],
 
   // Purchase Order Items
@@ -566,7 +560,7 @@ export const restFieldMappings = {
     { externalField: "price", internalField: "price" },
     { externalField: "currency", internalField: "currency" },
     { externalField: "deliveryDate", internalField: "deliveryDate" },
-    { externalField: "plant", internalField: "plant" }
+    { externalField: "plant", internalField: "plant" },
   ],
 
   // Vendors
@@ -577,7 +571,7 @@ export const restFieldMappings = {
     { externalField: "country", internalField: "country" },
     { externalField: "taxNumber", internalField: "taxNumber" },
     { externalField: "currency", internalField: "currency" },
-    { externalField: "email", internalField: "email" }
+    { externalField: "email", internalField: "email" },
   ],
 
   // Invoices
@@ -587,7 +581,7 @@ export const restFieldMappings = {
     { externalField: "date", internalField: "date" },
     { externalField: "amount", internalField: "amount" },
     { externalField: "currency", internalField: "currency" },
-    { externalField: "paymentTerms", internalField: "paymentTerms" }
+    { externalField: "paymentTerms", internalField: "paymentTerms" },
   ],
 
   // Payments
@@ -597,6 +591,144 @@ export const restFieldMappings = {
     { externalField: "amount", internalField: "amount" },
     { externalField: "method", internalField: "method" },
     { externalField: "date", internalField: "date" },
-    { externalField: "currency", internalField: "currency" }
-  ]
+    { externalField: "currency", internalField: "currency" },
+  ],
 };
+
+export const countryKYCConfig = [
+  {
+    country: "IN",
+    taxIdLabel: "PAN Number",
+    taxIdType: "PAN",
+    bankRequired: true,
+    documents: [
+      { code: "PAN_CARD", type: "FILE", label: "PAN Card", category: "TAX", required: true },
+      { code: "AADHAR_CARD", type: "FILE", label: "Aadhar Card", category: "IDENTITY", required: true },
+      { code: "BANK_STATEMENT", type: "FILE", label: "Bank Statement", category: "FINANCIAL", required: true },
+      { code: "ADDRESS_PROOF", type: "FILE", label: "Address Proof", category: "ADDRESS", required: false }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" },
+      { key: "address", label: "Address", required: true, type: "STRING" },
+      { key: "annualIncome", label: "Annual Income", required: false, type: "NUMBER" }
+    ]
+  },
+
+  {
+    country: "US",
+    taxIdLabel: "SSN / EIN",
+    taxIdType: "SSN_EIN",
+    bankRequired: true,
+    documents: [
+      { code: "SSN_CARD", type: "FILE", label: "SSN Card", category: "TAX", required: true },
+      { code: "DRIVERS_LICENSE", type: "FILE", label: "Driver's License", category: "IDENTITY", required: true },
+      { code: "PASSPORT", type: "FILE", label: "Passport", category: "IDENTITY", required: false },
+      { code: "BANK_STATEMENT", type: "FILE", label: "Bank Statement", category: "FINANCIAL", required: true }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" },
+      { key: "address", label: "Address", required: true, type: "STRING" }
+    ]
+  },
+
+  {
+    country: "UK",
+    taxIdLabel: "National Insurance Number",
+    taxIdType: "NINO",
+    bankRequired: true,
+    documents: [
+      { code: "NINO_DOCUMENT", type: "FILE", label: "NINO Document", category: "TAX", required: true },
+      { code: "PASSPORT", type: "FILE", label: "Passport", category: "IDENTITY", required: true },
+      { code: "DRIVING_LICENSE", type: "FILE", label: "Driving License", category: "IDENTITY", required: false },
+      { code: "BANK_STATEMENT", type: "FILE", label: "Bank Statement", category: "FINANCIAL", required: true },
+      { code: "UTILITY_BILL", type: "FILE", label: "Utility Bill", category: "ADDRESS", required: true }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" },
+      { key: "address", label: "Address", required: true, type: "STRING" }
+    ]
+  },
+
+  {
+    country: "CA",
+    taxIdLabel: "SIN",
+    taxIdType: "SIN",
+    bankRequired: true,
+    documents: [
+      { code: "SIN_DOCUMENT", type: "FILE", label: "SIN Document", category: "TAX", required: true },
+      { code: "DRIVERS_LICENSE", type: "FILE", label: "Driver's License", category: "IDENTITY", required: true },
+      { code: "PASSPORT", type: "FILE", label: "Passport", category: "IDENTITY", required: false },
+      { code: "BANK_STATEMENT", type: "FILE", label: "Bank Statement", category: "FINANCIAL", required: true }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" },
+      { key: "address", label: "Address", required: true, type: "STRING" }
+    ]
+  },
+
+  {
+    country: "AU",
+    taxIdLabel: "TFN / ABN",
+    taxIdType: "TFN_ABN",
+    bankRequired: true,
+    documents: [
+      { code: "TFN", type: "FILE", label: "Tax File Number", category: "TAX", required: true },
+      { code: "PASSPORT", type: "FILE", label: "Passport", category: "IDENTITY", required: true },
+      { code: "ABN_CERT", type: "FILE", label: "ABN Registration", category: "BUSINESS", required: false }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" },
+      { key: "state", label: "State", required: true, type: "STRING" }
+    ]
+  },
+
+  {
+    country: "BD",
+    taxIdLabel: "TIN",
+    taxIdType: "TIN",
+    bankRequired: true,
+    documents: [
+      { code: "TIN", type: "FILE", label: "TIN Certificate", category: "TAX", required: true },
+      { code: "NID", type: "FILE", label: "National ID Card", category: "IDENTITY", required: true }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" }
+    ]
+  },
+
+  {
+    country: "LK",
+    taxIdLabel: "NIC",
+    taxIdType: "NIC",
+    bankRequired: true,
+    documents: [
+      { code: "NIC", type: "FILE", label: "National Identity Card", category: "IDENTITY", required: true },
+      { code: "TIN", type: "FILE", label: "TIN Document", category: "TAX", required: false }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" }
+    ]
+  },
+
+  {
+    country: "SG",
+    taxIdLabel: "NRIC / FIN",
+    taxIdType: "NRIC_FIN",
+    bankRequired: true,
+    documents: [
+      { code: "NRIC", type: "FILE", label: "NRIC", category: "IDENTITY", required: true },
+      { code: "FIN", type: "FILE", label: "FIN", category: "IDENTITY", required: false }
+    ],
+    fields: [
+      { key: "fullName", label: "Full Name", required: true, type: "STRING" },
+      { key: "dateOfBirth", label: "Date of Birth", required: true, type: "DATE" }
+    ]
+  }
+];

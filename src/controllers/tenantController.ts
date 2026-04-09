@@ -149,47 +149,47 @@ export const createTenant = async (
           approvalsRequired: limit.approvalsRequired,
         }));
 
-        const integrations = await integrationModel.find({
-          isActive: true,
-        });
+        // const integrations = await integrationModel.find({
+        //   isActive: true,
+        // });
 
-        const tenantIntegrations: any[] = [];
+        // const tenantIntegrations: any[] = [];
 
-        for (const integration of integrations) {
-          if (integration.mode === "TEMPLATE_BASED") {
-            const templates = await IntegrationTemplateModel.find({
-              integrationId: integration._id,
-              isActive: true,
-            });
+        // for (const integration of integrations) {
+        //   if (integration.mode === "TEMPLATE_BASED") {
+        //     const templates = await IntegrationTemplateModel.find({
+        //       integrationId: integration._id,
+        //       isActive: true,
+        //     });
 
-            for (const template of templates) {
-              tenantIntegrations.push({
-                tenantId: tenant._id,
-                name: `${integration.name} - ${template.protocol}`,
-                integrationId: integration._id,
-                templateId: template._id,
-                environment: "prod",
-                baseUrl: "",
-                credentials: {},
-                resourceOverrides: {},
-                isEnabled: false,
-              });
-            }
-          } else if (integration.mode === "SDK_BASED") {
-            tenantIntegrations.push({
-              tenantId: tenant._id,
-              name: integration.name,
-              integrationId: integration._id,
-              environment: "prod",
-              credentials: {},
-              isEnabled: false,
-            });
-          }
-        }
+        //     for (const template of templates) {
+        //       tenantIntegrations.push({
+        //         tenantId: tenant._id,
+        //         name: `${integration.name} - ${template.protocol}`,
+        //         integrationId: integration._id,
+        //         templateId: template._id,
+        //         environment: "prod",
+        //         baseUrl: "",
+        //         credentials: {},
+        //         resourceOverrides: {},
+        //         isEnabled: false,
+        //       });
+        //     }
+        //   } else if (integration.mode === "SDK_BASED") {
+        //     tenantIntegrations.push({
+        //       tenantId: tenant._id,
+        //       name: integration.name,
+        //       integrationId: integration._id,
+        //       environment: "prod",
+        //       credentials: {},
+        //       isEnabled: false,
+        //     });
+        //   }
+        // }
 
-        if (tenantIntegrations.length) {
-          await TenantIntegrations.insertMany(tenantIntegrations);
-        }
+        // if (tenantIntegrations.length) {
+        //   await TenantIntegrations.insertMany(tenantIntegrations);
+        // }
 
         await TenantAmountLimit.insertMany(approvalDocs);
 

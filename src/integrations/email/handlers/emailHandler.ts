@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import sgMail from "@sendgrid/mail";
 import axios from "axios";
+import { decrypt } from "../../../utils/cryptoUtil";
 
 export class EmailHandler {
   async execute(action: string, payload: any, credentials: any) {
@@ -9,6 +10,10 @@ export class EmailHandler {
     }
 
     const provider = credentials.provider;
+
+    if (!provider) {
+      throw new Error("Email provider missing in credentials");
+    }
 
     switch (provider) {
       case "smtp":
@@ -66,9 +71,7 @@ export class EmailHandler {
 
   //AWS SES (SDK v3)
   private async sesSendMail(credentials: any, payload: any) {
-    const { SESClient, SendEmailCommand } = await import(
-      "@aws-sdk/client-ses"
-    );
+    const { SESClient, SendEmailCommand } = await import("@aws-sdk/client-ses");
 
     const client = new SESClient({
       region: credentials.region,
@@ -81,19 +84,13 @@ export class EmailHandler {
     const command = new SendEmailCommand({
       Source: payload.from,
       Destination: {
-        ToAddresses: Array.isArray(payload.to)
-          ? payload.to
-          : [payload.to],
+        ToAddresses: Array.isArray(payload.to) ? payload.to : [payload.to],
       },
       Message: {
         Subject: { Data: payload.subject },
         Body: {
-          Text: payload.text
-            ? { Data: payload.text }
-            : undefined,
-          Html: payload.html
-            ? { Data: payload.html }
-            : undefined,
+          Text: payload.text ? { Data: payload.text } : undefined,
+          Html: payload.html ? { Data: payload.html } : undefined,
         },
       },
     });
@@ -102,39 +99,33 @@ export class EmailHandler {
   }
 
   //Microsoft Graph API (OAuth)
-  private async microsoftGraphSendMail(
-    credentials: any,
-    payload: any
-  ) {
-    // Step 1: Get Access Token
-    const tokenRes = await axios.post(
-      `https://login.microsoftonline.com/${credentials.tenantId}/oauth2/v2.0/token`,
-      new URLSearchParams({
-        client_id: credentials.clientId,
-        client_secret: credentials.clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials",
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+  private async microsoftGraphSendMail(credentials: any, payload: any) {
+    try {
+      //Get Access Token
+      const tokenRes = await axios.post(
+        `https://login.microsoftonline.com/${credentials.tenantId}/oauth2/v2.0/token`,
+        new URLSearchParams({
+          client_id: credentials.clientId,
+          client_secret: decrypt(credentials.clientSecret),
+          grant_type: "client_credentials",
+          scope: "https://graph.microsoft.com/.default",
+        }).toString(),
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
+      );
+
+      const accessToken = tokenRes.data.access_token;
+
+      if (!accessToken) {
+        throw new Error("Access token not received from Azure");
       }
-    );
 
-    const accessToken = tokenRes.data.access_token;
-
-    // Step 2: Send Mail
-    return await axios.post(
-      "https://graph.microsoft.com/v1.0/users/" +
-        payload.from +
-        "/sendMail",
-      {
+      //Prepare Graph payload
+      const graphPayload = {
         message: {
           subject: payload.subject,
           body: {
             contentType: payload.html ? "HTML" : "Text",
-            content: payload.html || payload.text,
+            content: payload.html || payload.body,
           },
           toRecipients: [
             {
@@ -144,12 +135,22 @@ export class EmailHandler {
             },
           ],
         },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+      };
+
+      const sendRes = await axios.post(
+        `https://graph.microsoft.com/v1.0/users/${credentials.fromEmail}/sendMail`,
+        graphPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
         },
-      }
-    );
+      );
+
+      return sendRes.data;
+    } catch (err: any) {
+      throw new Error( err.response?.data || err.message||"Failed to send email via Microsoft Graph");
+    }
   }
 }

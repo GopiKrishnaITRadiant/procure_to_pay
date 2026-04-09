@@ -1,5 +1,3 @@
-// src/payments/types.ts
-
 export type PaymentAction =
   | "createOrder"
   | "getPayment"
@@ -10,6 +8,7 @@ export type PaymentAction =
 export interface StripeCredentials {
   provider: "stripe";
   secretKey: string;
+  apiVersion?: string;
 }
 
 export interface RazorpayCredentials {

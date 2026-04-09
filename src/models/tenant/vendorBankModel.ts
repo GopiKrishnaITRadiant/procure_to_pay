@@ -1,9 +1,13 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export interface IVendorBank {
-  vendorId: Types.ObjectId;
+  vendorId?: Types.ObjectId;
+  userId?: Types.ObjectId;
+
+  userType: "VENDOR" | "TENANT" | "PLATFORM";
 
   accountNumber: string;
+  maskedAccountNumber: string;
   accountHolderName: string;
 
   bankName: string;
@@ -11,6 +15,7 @@ export interface IVendorBank {
 
   ifsc?: string;
   swift?: string;
+  country?: string;
 
   isPrimary: boolean;
 
@@ -21,9 +26,18 @@ export interface IVendorBank {
 
 export const VendorBankSchema = new Schema<IVendorBank>(
   {
-    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
+    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
+    userId: { type: Schema.Types.ObjectId, ref: "User" },
+
+    userType: {
+      type: String,
+      enum: ["VENDOR", "TENANT", "PLATFORM"],
+      required: true,
+      default: "VENDOR",
+    },
 
     accountNumber: { type: String, required: true },
+    maskedAccountNumber: { type: String, required: true },
     accountHolderName: { type: String, required: true },
 
     bankName: { type: String, required: true },
@@ -31,11 +45,14 @@ export const VendorBankSchema = new Schema<IVendorBank>(
 
     ifsc: String,
     swift: String,
+    // e.g., "IN", "US", "GB"
+    country: String, 
 
     isPrimary: { type: Boolean, default: true },
 
     status: {
       type: String,
+      enum: ["PENDING", "VERIFIED", "FAILED"],
       default: "PENDING",
       index: true,
     },

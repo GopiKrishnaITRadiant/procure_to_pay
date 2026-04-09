@@ -3,54 +3,94 @@ import { ApiError } from "../../utils/apiErrors";
 import { sendResponse } from "../../utils/sendResponse";
 import { Types } from "mongoose";
 import { generateVendorCode } from "../../utils/codeGenerator";
+import { seedVendorRoles } from "../../helpers/vendorRoleSeed";
+import bcrypt from "bcrypt";
 
-export const createVendorUser = async (req: Request, res: Response, next: NextFunction) => {
-  const { name, email, password, role } = req.body;
-
+export const createVendorByAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const {
+      name,
+      email,
+      phone,
+      phoneCountryCode,
+      country,
+      vendorCategory,
+      password,
+    } = req.body;
+
     if (!req.tenantConnection) {
       throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
     }
 
-    const Vendor = req.tenantConnection.model("Vendor");
-    const VendorUser = req.tenantConnection.model("VendorUser");
+    const tenantConnection = req.tenantConnection;
 
-    const vendorId = req.user?.vendorId;
-
-    const vendor = await Vendor.findById(vendorId);
-
-    if (!vendor) {
-      throw new ApiError(404, "Vendor not found", "NOT_FOUND");
-    }
-
-    if (!["APPROVED", "ACTIVE"].includes(vendor.status)) {
-      throw new ApiError(403, "Vendor is not allowed to add users", "INVALID_STATE");
-    }
-
-    if (!vendor.capabilities.portalAccess) {
-      throw new ApiError(403, "Portal access is disabled", "FORBIDDEN");
-    }
-
-    if (req.user?.role !== "ADMIN") {
-      throw new ApiError(403, "Only vendor admin can add users", "FORBIDDEN");
-    }
+    const Vendor = tenantConnection.model("Vendor");
+    const VendorUser = tenantConnection.model("VendorUser");
+    const VendorRole = tenantConnection.model("VendorRole");
 
     const existing = await VendorUser.findOne({ email });
     if (existing) {
-      throw new ApiError(400, "User already exists", "DUPLICATE_USER");
+      throw new ApiError(400, "Email already exists", "DUPLICATE_EMAIL");
     }
 
-    const user = await VendorUser.create({
-      vendorId,
-      name,
+    const code = await generateVendorCode(tenantConnection);
+
+    //create vendor (AUTO APPROVED)
+    const vendor = await Vendor.create({
+      companyName: name,
+      code,
+      vendorType: "EXTERNAL",
+      onboardingSource: "ADMIN",
+
+      status: "ACTIVE",
+      isActive: true,
+
+      approvedAt: new Date(),
+      approvedBy: req.user?.userId,
+
       email,
-      password,
-      role: role || "STAFF",
+      phone,
+      phoneCountryCode,
+      country,
+      vendorCategory,
+
+      capabilities: {
+        portalAccess: true,
+        canParticipateInRFQ: true,
+        canReceivePO: true,
+        canSubmitInvoice: true,
+      },
+
+      createdBy: req.user?.userId,
     });
 
-    res.status(201).json({
-      success: true,
-      data: user,
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create ADMIN user for vendor
+    const user = await VendorUser.create({
+      vendorId: vendor._id,
+      email,
+      password: hashedPassword,
+      role: "ADMIN",
+      authProvider: "LOCAL",
+      isEmailVerified: true,
+      isActive: true,
+    });
+
+    await seedVendorRoles(VendorRole, vendor._id);
+
+    sendResponse({
+      res,
+      statusCode: 201,
+      message: "Vendor created and activated successfully",
+      data: {
+        vendorId: vendor._id,
+        userId: user._id,
+      },
     });
 
   } catch (error) {

@@ -10,9 +10,10 @@ import { VendorSchema } from "../models/tenant/vendorModel";
 import { VendorUserSchema } from "../models/tenant/vendorUserModel";
 import { VendorKYCSchema } from "../models/tenant/vendorKycModel";
 import { VendorBankSchema } from "../models/tenant/vendorBankModel";
-import { VendorDocumentSchema } from "../models/tenant/vendorDocumentModel";
+import { documentSchema } from "../models/tenant/documentModel";
 import { VerificationSchema } from "../models/tenant/vendorVerificationModel";
 import { VendorRoleSchema } from "../models/tenant/vendorRoleModel";
+import { CountryKYCConfigSchema } from "../models/tenant/countryKYCConfigModel";
 
 export const schemas = {
   User: userSchema,
@@ -27,7 +28,8 @@ export const schemas = {
   VendorUser:VendorUserSchema,
   VendorVerification:VerificationSchema,
   VendorKYC:VendorKYCSchema,
-  VendorDocument:VendorDocumentSchema,
+  Document:documentSchema,
   venodrBank:VendorBankSchema,
-  VendorRole:VendorRoleSchema
+  VendorRole:VendorRoleSchema,
+  CountryKYCConfig:CountryKYCConfigSchema,
 };

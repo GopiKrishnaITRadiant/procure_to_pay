@@ -45,7 +45,6 @@ export const login = async (
     }
 
     const connection = await getTenantConnection(tenantDoc.companyCode);
-    console.log(typeof connection)
 
     const userModel = connection.model("User");
 

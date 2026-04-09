@@ -1,4 +1,4 @@
-export const generateWelcomeEmail = (firstName: string, activationLink: string, supportEmail: string, helpCenterLink: string, companyName: string, websiteUrl: string, facebookLink: string, twitterLink: string, linkedinLink: string) => {
+export const generateTenantWelcomeEmail = (firstName: string, activationLink: string, supportEmail: string, helpCenterLink: string, companyName: string, websiteUrl: string, facebookLink: string, twitterLink: string, linkedinLink: string) => {
   return `
     <!DOCTYPE html>
     <html lang="en">

@@ -21,14 +21,23 @@ export type StorageAction =
   | "delete"
   | "getDownloadUrl"
   | "presignedUploadUrl"
-  | "presignedDownloadUrl";
+  | "presignedDownloadUrl"
+  | "getObjectStream";
 
 export type StorageProvider = "s3" | "azure_blob" | "minio";
 
 export class StorageHandler {
-  async execute(action: StorageAction, payload: any, credentials: any) {
+  async execute(action: StorageAction, payload: any, credentials: any): Promise<any> {
     if (!credentials?.provider) {
       throw new Error("Storage provider missing in credentials");
+    }
+
+    if (Array.isArray(payload)) {
+      return Promise.all(
+        payload.map((item) =>
+          this.execute(action, item, credentials)
+        )
+      );
     }
 
     switch (credentials.provider) {
@@ -224,6 +233,9 @@ export class StorageHandler {
           payload.key,
           payload.expiresIn || 300,
         );
+
+      case "getObjectStream":
+        return client.getObject(bucket, payload.key);
 
       default:
         throw new Error(`Unsupported MinIO action: ${action}`);

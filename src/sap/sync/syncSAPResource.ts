@@ -43,6 +43,6 @@ export const syncSAPResource = async (
     resource,
     adapted
   );
-  console.log('mapped',mapped);
+  // console.log('mapped',mapped);
   return mapped;
 };

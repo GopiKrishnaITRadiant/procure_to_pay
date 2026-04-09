@@ -1,8 +1,6 @@
-// src/payments/razorpayHandler.ts
-
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import { PaymentAction, RazorpayCredentials } from "./types";
+import { PaymentAction, RazorpayCredentials } from "../types";
 
 export class RazorpayHandler {
   private razorpay: Razorpay;

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { createVendorUser, getAllVendors, getOneVendor, removeVendor, updateVendor } from "../../controllers/tenant/vendorController";
+import { createVendorByAdmin, getAllVendors, getOneVendor, removeVendor, updateVendor } from "../../controllers/tenant/vendorController";
 const routes=Router()
 
-routes.post("/",createVendorUser)
+routes.post("/",createVendorByAdmin)
 routes.put("/:vendorId",updateVendor)
 routes.get("/:vendorId",getOneVendor)
 routes.get("/",getAllVendors)

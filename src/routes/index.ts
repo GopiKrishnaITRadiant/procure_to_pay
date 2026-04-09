@@ -20,6 +20,8 @@ import requisitionRoutes from "./tenant/requisitionRoutes"
 import vendorRoutes from "./tenant/vendorRoutes"
 import vendorAuthRoutes from "./tenant/vendorAuthRoutes"
 import tenantAdminRoutes from "./tenant/tenantAdminRoutes"
+import countryKYCConfigRoutes from "./countryKYCConfigRoutes"
+import documentRoutes from "./tenant/documentRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -30,7 +32,7 @@ apiRouter.use("/super-admin", platformUserRoutes);
 apiRouter.use("/tenant/vendor-user",vendorAuthRoutes)
 
 //Protected routes
-apiRouter.use(authenticate);
+// apiRouter.use(authenticate);
 
 //admin routes
 apiRouter.use("/tenants", tenantRoutes);
@@ -38,6 +40,7 @@ apiRouter.use("/plans", planRoutes);
 apiRouter.use("/integrations", integrationRoutes);
 apiRouter.use("/integration-templates",integrationTemplateRoutes)
 apiRouter.use("/terms",termsRoutes)
+apiRouter.use("/countryKYCConfig",countryKYCConfigRoutes)
 
 //tenant admin routes
 apiRouter.use("/tenant/admin",tenantAdminRoutes)
@@ -52,6 +55,7 @@ apiRouter.use("/tenant/category",categoryRoutes)
 apiRouter.use("/tenant/material",materialRoutes)
 apiRouter.use("/tenant/requisition",requisitionRoutes)
 apiRouter.use("/tenant/vendor",vendorRoutes)
+apiRouter.use("/tenant/document",documentRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);

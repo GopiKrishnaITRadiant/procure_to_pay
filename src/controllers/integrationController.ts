@@ -21,10 +21,10 @@ export const createIntegrationType = async (
       credentialSchema
     } = req.body;
 
-    if (!name || !code || !mode) {
+    if (!name || !code || !mode||!credentialSchema) {
       throw new ApiError(
         400,
-        "Name, code and mode are required",
+        "Name, code, mode and credentialSchema are required",
         "VALIDATION_ERROR"
       );
     }
