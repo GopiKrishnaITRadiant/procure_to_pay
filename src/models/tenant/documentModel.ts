@@ -1,20 +1,30 @@
 import { Schema, model, Types } from "mongoose";
 
 export interface IDocument {
-  vendorId: Types.ObjectId;
-  userId: Types.ObjectId;
-  tenantIntegrationId?: Types.ObjectId;
+  vendorId?: Types.ObjectId;
+  userId?: Types.ObjectId;
+  tenantIntegrationId: Types.ObjectId;
+  vendorKycId?: Types.ObjectId;
 
-  documentCode: string;
-  userType:"VENDOR"|"TENANT"|"PLATFORM";
+  userType:string;
+  documentType: "KYC" | "INVOICE" | "PO" | "CONTRACT" | "PROFILE" | "OTHER";
 
-  country: string;
+  referenceId?: Types.ObjectId;
+  referenceType?: "INVOICE" | "PO" | "USER" | "VENDOR" | "KYC";
+
+  // Only for KYC
+  documentCode?: string;
+  country?: string;
 
   fileName: string;
   fileUrl: string;
   mimeType: string;
 
-  status: "PENDING" | "VERIFIED" | "REJECTED"|"REPLACED";
+  status: "PENDING" | "VERIFIED" | "REJECTED" | "REPLACED";
+
+  version?: number;
+  isLatest?: boolean;
+
   replacedBy?: Types.ObjectId;
 
   uploadedBy: Types.ObjectId;
@@ -45,11 +55,17 @@ export const documentSchema = new Schema<IDocument>(
       index: true,
     },
 
+    vendorKycId: {
+      type: Schema.Types.ObjectId,
+      ref: "VendorKYC",
+      index: true,
+    },
+
     userType: {
       type: String,
-      enum: ["VENDOR", "TENANT", "PLATFORM"],
+      // enum: ["VENDOR", "TENANT"],
       required: true,
-      default: "VENDOR",
+      // default: "VENDOR",
     },
 
     mimeType: {
@@ -60,14 +76,18 @@ export const documentSchema = new Schema<IDocument>(
 
     documentCode: {
       type: String,
-      required: true,
       uppercase: true,
       trim: true,
     },
 
+    documentType: {
+      type: String,
+      enum: ["KYC", "INVOICE", "PO", "CONTRACT", "PROFILE", "OTHER"],
+      required: true,
+    },
+
     country: {
       type: String,
-      required: true,
       uppercase: true,
       trim: true,
     },
@@ -80,6 +100,11 @@ export const documentSchema = new Schema<IDocument>(
       enum: ["PENDING", "VERIFIED", "REJECTED", "REPLACED"],
       default: "PENDING",
       index: true,
+    },
+
+    replacedBy: {
+      type: Types.ObjectId,
+      ref: "Document",
     },
 
     uploadedBy: {
@@ -95,12 +120,7 @@ export const documentSchema = new Schema<IDocument>(
   { timestamps: true, versionKey: false }
 );
 
-documentSchema.index(
-  { vendorId: 1, documentCode: 1 },
-  { unique: true, partialFilterExpression: { vendorId: { $exists: true } } }
-);
-
-documentSchema.index(
-  { userId: 1, documentCode: 1 },
-  { unique: true, partialFilterExpression: { userId: { $exists: true } } }
-);
+// documentSchema.index(
+//   { vendorId: 1, documentCode: 1 },
+//   { unique: true, partialFilterExpression: { vendorId: { $exists: true } } }
+// );

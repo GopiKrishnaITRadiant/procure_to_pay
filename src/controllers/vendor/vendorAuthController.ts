@@ -199,6 +199,7 @@ export const loginVendor = async (
         email: user.email,
         userType: "VENDOR",
         companyCode:tenantDoc.companyCode,
+        tenantId:tenantDoc._id
       },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }

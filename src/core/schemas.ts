@@ -6,13 +6,13 @@ import {categorySchema} from "../models/tenant/categoryModel";
 import { MaterialSchema } from "../models/tenant/materialsModel";
 import { RequisitionSchema } from "../models/tenant/requisitionModel";
 import { counterSchema } from "../models/tenant/counterModel";
-import { VendorSchema } from "../models/tenant/vendorModel";
-import { VendorUserSchema } from "../models/tenant/vendorUserModel";
-import { VendorKYCSchema } from "../models/tenant/vendorKycModel";
-import { VendorBankSchema } from "../models/tenant/vendorBankModel";
+import { VendorSchema } from "../models/vendor/vendorModel";
+import { VendorUserSchema } from "../models/vendor/vendorUserModel";
+import { VendorKYCSchema } from "../models/vendor/vendorKycModel";
+import { VendorBankSchema } from "../models/vendor/vendorBankModel";
 import { documentSchema } from "../models/tenant/documentModel";
-import { VerificationSchema } from "../models/tenant/vendorVerificationModel";
-import { VendorRoleSchema } from "../models/tenant/vendorRoleModel";
+import { VerificationSchema } from "../models/vendor/vendorVerificationModel";
+import { VendorRoleSchema } from "../models/vendor/vendorRoleModel";
 import { CountryKYCConfigSchema } from "../models/tenant/countryKYCConfigModel";
 
 export const schemas = {

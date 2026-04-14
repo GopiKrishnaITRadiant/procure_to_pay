@@ -17,11 +17,12 @@ import termsRoutes from "./termsRoutes"
 import categoryRoutes from "./tenant/categoryRoutes"
 import materialRoutes from "./tenant/materialRoutes"
 import requisitionRoutes from "./tenant/requisitionRoutes"
-import vendorRoutes from "./tenant/vendorRoutes"
-import vendorAuthRoutes from "./tenant/vendorAuthRoutes"
+import vendorRoutes from "./vendor/vendorRoutes"
+import vendorAuthRoutes from "./vendor/vendorAuthRoutes"
 import tenantAdminRoutes from "./tenant/tenantAdminRoutes"
 import countryKYCConfigRoutes from "./countryKYCConfigRoutes"
 import documentRoutes from "./tenant/documentRoutes"
+import vendorKycRoutes from "./vendor/vendorKycRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -32,7 +33,7 @@ apiRouter.use("/super-admin", platformUserRoutes);
 apiRouter.use("/tenant/vendor-user",vendorAuthRoutes)
 
 //Protected routes
-// apiRouter.use(authenticate);
+apiRouter.use(authenticate);
 
 //admin routes
 apiRouter.use("/tenants", tenantRoutes);
@@ -56,6 +57,7 @@ apiRouter.use("/tenant/material",materialRoutes)
 apiRouter.use("/tenant/requisition",requisitionRoutes)
 apiRouter.use("/tenant/vendor",vendorRoutes)
 apiRouter.use("/tenant/document",documentRoutes)
+apiRouter.use("/vendor/",vendorKycRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);

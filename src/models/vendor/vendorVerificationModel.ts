@@ -17,6 +17,7 @@ export interface IVerification {
   documents: {
     total: number;
     verified: number;
+    rejected: number;
     status: "PENDING" | "PARTIAL" | "VERIFIED";
   };
 
@@ -64,6 +65,7 @@ export const VerificationSchema = new Schema<IVerification>(
     documents: {
       total: Number,
       verified: Number,
+      rejected: Number,
       status: { type: String, default: "PENDING" },
     },
 

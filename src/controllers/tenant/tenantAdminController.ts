@@ -108,3 +108,130 @@ export const rejectVendor = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
+
+export const verifyDocument = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { vendorKycId, documentId, status, remarks } = req.body;
+
+    if (!["VERIFIED", "REJECTED"].includes(status)) {
+      throw new ApiError(400, "Invalid status", "VALIDATION_ERROR");
+    }
+
+    if (!req.tenantConnection) {
+      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+    }
+
+    const Document = req.tenantConnection.model("Document");
+    const Verification = req.tenantConnection.model("VendorVerification");
+    const VendorKYC = req.tenantConnection.model("VendorKYC");
+
+    const doc = await Document.findById(documentId);
+
+    if (!doc) {
+      throw new ApiError(404, "Document not found", "NOT_FOUND");
+    }
+
+    // Ensure document belongs to correct KYC
+    if (vendorKycId && doc.vendorKycId?.toString() !== vendorKycId) {
+      throw new ApiError(400, "Document does not belong to this KYC");
+    }
+
+    if (doc.status === "REPLACED") {
+      throw new ApiError(400, "Document already replaced");
+    }
+
+    if (doc.status === "VERIFIED") {
+      throw new ApiError(400, "Already verified");
+    }
+
+    // Get KYC using vendorKycId
+    const kyc = await VendorKYC.findById(
+      vendorKycId || doc.vendorKycId
+    );
+
+    if (!kyc) {
+      throw new ApiError(404, "KYC not found");
+    }
+
+    // Only allow verification when UNDER_REVIEW
+    if (kyc.kycStatus !== "UNDER_REVIEW") {
+      throw new ApiError(
+        400,
+        `Cannot verify document when KYC is ${kyc.kycStatus}`
+      );
+    }
+
+    //Update document
+    doc.status = status;
+    doc.verifiedBy = req.user?.userId;
+    doc.verifiedAt = new Date();
+    doc.remarks = remarks || "";
+
+    await doc.save();
+
+    //Update verification counters
+    if (status === "VERIFIED") {
+      await Verification.updateOne(
+        { vendorId: doc.vendorId },
+        { $inc: { "documents.verified": 1 } },
+        { upsert: true }
+      );
+    }
+
+    if (status === "REJECTED") {
+      await Verification.updateOne(
+        { vendorId: doc.vendorId },
+        { $inc: { "documents.rejected": 1 } },
+        { upsert: true }
+      );
+    }
+
+
+    // If ANY doc rejected → reject entire KYC
+    if (status === "REJECTED") {
+      await VendorKYC.updateOne(
+        { _id: kyc._id },
+        {
+          kycStatus: "REJECTED",
+          verifiedAt: new Date(),
+          verifiedBy: req.user?.userId,
+        }
+      );
+    }
+
+    // If VERIFIED → check if all docs verified
+    if (status === "VERIFIED") {
+      const pendingOrRejected = await Document.findOne({
+        vendorKycId: kyc._id,
+        documentType: "KYC",
+        status: { $in: ["UNDER_REVIEW", "REJECTED"] },
+      });
+
+      // All docs verified → APPROVE KYC
+      if (!pendingOrRejected) {
+        await VendorKYC.updateOne(
+          { _id: kyc._id },
+          {
+            kycStatus: "APPROVED",
+            verifiedAt: new Date(),
+            verifiedBy: req.user?.userId,
+          }
+        );
+      }
+    }
+
+    sendResponse({
+      res,
+      statusCode: 200,
+      message: `Document ${status.toLowerCase()} successfully`,
+      data: doc,
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};

@@ -9,7 +9,7 @@ export const seedVendorRoles = async (
 
   if (existing.length > 0) return;
 
-  const roles = ["ADMIN", "FINANCE", "VIEWER"];
+  const roles = ["VENDOR_ADMIN", "VENDOR_FINANCE", "VENDOR_VIEWER"];
 
   const ROLE_PERMISSIONS_MAP: Record<string, string[]> = {
     ADMIN: [

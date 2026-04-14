@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginVendor, registerVendor, verifyVendorEmail } from "../../controllers/tenant/vendorAuthController";
+import { loginVendor, registerVendor, verifyVendorEmail } from "../../controllers/vendor/vendorAuthController";
 const routes = Router();
 
 routes.post("/",registerVendor)

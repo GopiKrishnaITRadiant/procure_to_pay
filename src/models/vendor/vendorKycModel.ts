@@ -24,8 +24,8 @@ export interface IVendorKYC {
 
   kycStatus:
     | "PENDING"
-    | "IN_PROGRESS"
     | "UNDER_REVIEW"
+    | "VERIFIED"
     | "APPROVED"
     | "REJECTED";
 
@@ -40,7 +40,6 @@ export const VendorKYCSchema = new Schema<IVendorKYC>(
       type: Schema.Types.ObjectId,
       ref: "Vendor",
       required: true,
-      unique: true,
     },
 
     companyName: { type: String, required: true },
@@ -50,7 +49,6 @@ export const VendorKYCSchema = new Schema<IVendorKYC>(
     taxIdType: { type: String, required: true },
     country: { type: String, required: true },
 
-    panNumber: String,
     registrationNumber: String,
 
     registeredAddress: String,
@@ -64,6 +62,7 @@ export const VendorKYCSchema = new Schema<IVendorKYC>(
 
     kycStatus: {
       type: String,
+      enum: ["PENDING", "UNDER_REVIEW", "VERIFIED", "APPROVED", "REJECTED"],
       default: "PENDING",
       index: true,
     },
@@ -73,4 +72,9 @@ export const VendorKYCSchema = new Schema<IVendorKYC>(
     verifiedBy: { type: Schema.Types.ObjectId },
   },
   { timestamps: true,versionKey:false }
+);
+
+VendorKYCSchema.index(
+  { vendorId: 1, country: 1 },
+  { unique: true }
 );

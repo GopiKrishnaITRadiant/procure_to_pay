@@ -125,7 +125,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       req.user = {
         userId: vendorUser._id.toString(),
         userType: "VENDOR",
-        tenantId: vendorUser.tenantId,
+        tenantId: decoded.tenantId,
         companyCode: decoded.companyCode,
         vendorId: vendor._id.toString(),
         roleId: role?._id?.toString(),

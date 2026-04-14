@@ -40,5 +40,13 @@ export const generateVendorCode= async (connection: any) => {
   return `VENDOR-${year}-${sequence.toString().padStart(6, "0")}`;
 }
 
+export const generateDocumentCode = async (connection: any) => {
+  const sequence = await getNextSequence(connection, "KYC");
+
+  const year = new Date().getFullYear();
+
+  return `INV-${year}-${sequence.toString().padStart(6, "0")}`;
+}
+
 export const token = crypto.randomBytes(32).toString("hex");
 const expires = new Date(Date.now() + 1000 * 60 * 60);
