@@ -58,6 +58,29 @@ const tenantSchema = new Schema<ITenant>(
       required: true,
       unique: true,
     },
+
+    procurementMode: {
+      type: String,
+      enum: ["INTERNAL" , "SAP" , "HYBRID"],
+      default: "HYBRID",
+    },
+
+    integrations: {
+      sap: {
+        enabled: {
+          type: Boolean,
+          default: true,
+        },
+      }
+    },
+
+    features:{
+      poModule: { type: Boolean, default: true },
+      vendorPortal: { type: Boolean, default: false },
+      directPO: { type: Boolean, default: false },
+      rfq: { type: Boolean, default: false },
+      contract: { type: Boolean, default: false },
+    },
     
     security: {
       enforceMFA: {

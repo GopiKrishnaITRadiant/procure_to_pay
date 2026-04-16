@@ -67,7 +67,7 @@ export interface IApprovalStep {
 
   approvedBy: Types.ObjectId[];
 
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "PENDING"|"IN_PROGRESS" | "APPROVED" | "REJECTED";
 
   approvedAt?: Date;
 
@@ -102,7 +102,7 @@ const ApprovalStepSchema = new Schema<IApprovalStep>(
 
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED"],
+      enum: ["PENDING", "IN_PROGRESS", "APPROVED", "REJECTED"],
       default: "PENDING",
       index: true,
     },
@@ -141,9 +141,11 @@ export interface IRequisition {
   approvalStatus: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
 
   currentApprovalLevel: number;
+  procurementType: "DIRECT" | "RFQ" | "CONTRACT";
 
   approvalFlow: IApprovalStep[];
 
+  //last approved details
   approvedBy?: Types.ObjectId;
   approvedAt?: Date;
   rejectionReason?: string;
@@ -158,6 +160,8 @@ export interface IRequisition {
 
   source: "MANUAL" | "API";
   externalId?: string;
+
+  idempotencyKey: String
 
   createdBy: Types.ObjectId;
   updatedBy?: Types.ObjectId;
@@ -209,6 +213,12 @@ export const RequisitionSchema = new Schema<IRequisition>(
       default: 0,
     },
 
+    procurementType: {
+      type: String,
+      enum: ["DIRECT", "RFQ", "CONTRACT"],
+      default: "RFQ",
+    },
+
     approvalFlow: {
       type: [ApprovalStepSchema],
       default: [],
@@ -236,6 +246,8 @@ export const RequisitionSchema = new Schema<IRequisition>(
     },
 
     externalId: { type: String },
+
+    idempotencyKey: { type: String, trim: true },
 
     createdBy: { type: Schema.Types.ObjectId, required: true },
     updatedBy: { type: Schema.Types.ObjectId },

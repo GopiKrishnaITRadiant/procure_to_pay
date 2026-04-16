@@ -35,12 +35,19 @@ export interface ITenant {
   dbName: string;
 
   features: {
-    poModule:boolean;
-    sapIntegration: boolean;
+    poModule: boolean;
+    rfq: boolean;
+    contract: boolean;
     vendorPortal: boolean;
-    apiAccess: boolean;
-    advancedAnalytics: boolean;
-  };
+  },
+
+  procurementMode: "INTERNAL" | "SAP" | "HYBRID",
+
+  integrations: {
+    sap: {
+      enabled: boolean;
+    }
+  }
 
   limits: {
     maxUsers: number;

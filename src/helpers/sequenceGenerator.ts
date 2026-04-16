@@ -1,6 +1,6 @@
 export const getNextSequence = async (
   connection: any,
-  module: "PR" | "PO" | "INV"|"VENDOR" | "KYC"
+  module: "PR"|"RFQ" | "PO" | "INV"|"VENDOR" | "KYC"
 ) => {
   const Counter = connection.model("Counter");
 

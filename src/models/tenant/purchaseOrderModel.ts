@@ -1,4 +1,4 @@
-import { Schema, model, Types, Document } from "mongoose";
+import { Schema, Types, Document } from "mongoose";
 
 export interface IPurchaseOrderItem {
   _id: Types.ObjectId;
@@ -25,6 +25,13 @@ export interface IPurchaseOrderItem {
 
   receivedQuantity?: number;
   invoicedQuantity?: number;
+  requisitionId?: Types.ObjectId;
+  rfqId?: Types.ObjectId;
+  quotationId?: Types.ObjectId;
+  contractId?: Types.ObjectId;
+
+  // SAP specific
+  externalId?: string; // SAP PO Number
 }
 
 export interface IPurchaseOrder extends Document {
@@ -62,7 +69,7 @@ export interface IPurchaseOrder extends Document {
 
   items: IPurchaseOrderItem[];
 
-  source: "SAP" | "MANUAL" | "API";
+  source: "SAP" | "DIRECT" | "RFQ" | "CONTRACT";
   syncStatus?: "SYNCED" | "PENDING" | "FAILED";
   lastSyncedAt?: Date;
 
@@ -107,7 +114,7 @@ const PurchaseOrderItemSchema = new Schema<IPurchaseOrderItem>(
   { _id: true }
 );
 
-const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
+export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
   {
     tenantId: {
       type: Schema.Types.ObjectId,
@@ -159,7 +166,7 @@ const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
 
     source: {
       type: String,
-      enum: ["SAP", "MANUAL", "API"],
+      enum: ["SAP", "DIRECT", "RFQ", "CONTRACT"],
       default: "SAP",
     },
 
@@ -174,7 +181,7 @@ const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
     createdBy: { type: Schema.Types.ObjectId },
     updatedBy: { type: Schema.Types.ObjectId },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey:false }
 );
 
 PurchaseOrderSchema.index(
@@ -185,11 +192,3 @@ PurchaseOrderSchema.index(
 PurchaseOrderSchema.index({ supplier: 1, tenantId: 1 });
 PurchaseOrderSchema.index({ status: 1, tenantId: 1 });
 PurchaseOrderSchema.index({ creationDate: -1 });
-
-/* =====================================================
-   MODEL
-===================================================== */
-export const PurchaseOrderModel = model<IPurchaseOrder>(
-  "PurchaseOrder",
-  PurchaseOrderSchema
-);

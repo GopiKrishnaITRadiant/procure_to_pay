@@ -4,6 +4,7 @@ import { sendResponse } from "../../utils/sendResponse";
 import { Types } from "mongoose";
 import { generateRequisitionNumber } from "../../utils/codeGenerator";
 
+//create requisition and line items if line items not exists it will create but isMaterialCatalog will be false
 export const createRequisition = async (
   req: Request,
   res: Response,
@@ -26,11 +27,28 @@ export const createRequisition = async (
       items,
       source = "MANUAL",
       externalId,
-      skipApproval
+      skipApproval,
+      procurementType,
+      idempotencyKey,
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
       throw new ApiError(400, "Items are required", "VALIDATION_ERROR");
+    }
+
+    if (idempotencyKey) {
+      const existing = await Requisition.findOne({
+        idempotencyKey: idempotencyKey,
+        createdBy: user.userId,
+      });
+
+      if (existing){
+        throw new ApiError(
+          400,
+          "Requisition with same idempotency key already exists",
+          "DUPLICATE_IDEMPOTENCY_KEY"
+        );
+      }
     }
 
     const materialIds = items
@@ -133,6 +151,8 @@ export const createRequisition = async (
       approvalStatus: "PENDING",
       currentApprovalLevel: 0,
       approvalFlow: [],
+      procurementType,
+      idempotencyKey
     });
 
     return sendResponse({
@@ -183,7 +203,8 @@ export const updateRequisition = async (
       items,
       source,
       externalId,
-      skipApproval
+      skipApproval,
+      procurementType
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -360,6 +381,7 @@ export const updateRequisition = async (
       externalId ?? existingRequisition.externalId;
 
     existingRequisition.skipApproval = skipApproval
+    existingRequisition.procurementType = procurementType
     existingRequisition.totalEstimatedAmount = totalEstimatedAmount;
 
     existingRequisition.updatedBy = user.userId;
@@ -486,11 +508,11 @@ export const submitRequisition = async (req: Request, res: Response, next: NextF
       });
     }
 
-    const amount = requisition.totalEstimatedAmount;
+    const amount = requisition?.totalEstimatedAmount||0;
 
     const limits = await TenantAmountLimit.find({
-      // minAmount: { $gte: amount },
-      maxAmount: { $lte: amount },
+      // minAmount: { $lte: Number(amount) },
+      maxAmount: { $gte: Number(amount) },
       isActive: true,
     }).sort({ level: 1, });
 
@@ -509,7 +531,7 @@ export const submitRequisition = async (req: Request, res: Response, next: NextF
           roleIds: [],
           approvalsRequired: l.approvalsRequired || 1,
           approvedBy: [],
-          status: "PENDING",
+          status: "IN_PROGRESS",
         });
       }
 
@@ -574,20 +596,24 @@ export const approveRequisition = async (req: Request, res: Response, next: Next
     }
 
     const isAdmin = user?.role === "Admin";
+    const now = new Date();
 
     if (isAdmin) {
-      if (requisition.approvalStatus === "APPROVED") {
-        throw new ApiError(400, "Already fully approved");
+      if (requisition.status === "APPROVED") {
+        throw new ApiError(400, "Requisition already approved");
       }
 
       requisition.status = "APPROVED";
       requisition.approvalStatus = "APPROVED";
       requisition.approvedBy = user.userId;
-      requisition.approvedAt = new Date();
+      requisition.approvedAt = now;
 
       requisition.approvalFlow.forEach((step: any) => {
-        step.status = "APPROVED";
-        step.approvedAt = new Date();
+        if (step.status !== "APPROVED") {
+          step.status = "APPROVED";
+          step.approvedAt = now;
+          step.approvedBy = [user.userId];
+        }
       });
 
       await requisition.save();
@@ -595,7 +621,7 @@ export const approveRequisition = async (req: Request, res: Response, next: Next
       return sendResponse({
         res,
         statusCode: 200,
-        message: "approved by admin",
+        message: "Approved by admin",
         data: requisition,
       });
     }
@@ -634,8 +660,8 @@ export const approveRequisition = async (req: Request, res: Response, next: Next
     }
 
     currentStep.approvedBy.push(user?.userId);
-
-    if (currentStep.approvedBy.length >= currentStep.approvalsRequired) {
+    
+    if (!currentStep.status || currentStep.status !== "APPROVED") {
       currentStep.status = "APPROVED";
       currentStep.approvedAt = new Date();
 
@@ -690,11 +716,16 @@ export const rejectRequisition = async (
       throw new ApiError(404, "Requisition not found");
     }
 
+    if (!["SUBMITTED", "IN_PROGRESS"].includes(requisition.status)) {
+      throw new ApiError(400, `Cannot reject ${requisition.status} requisition`);
+    }
+
     if (requisition.approvalStatus !== "IN_PROGRESS") {
       throw new ApiError(400, "Not in approval stage");
     }
 
     const isAdmin = user?.role === "Admin";
+    const now = new Date();
 
     if (isAdmin) {
       requisition.status = "REJECTED";
@@ -704,10 +735,12 @@ export const rejectRequisition = async (
       requisition.approvedAt = undefined;
 
       requisition.approvalFlow.forEach((step: any) => {
-        step.status = "REJECTED";
-        step.rejectedBy = user.userId;
-        step.rejectedAt = new Date();
-        step.rejectionReason = reason;
+        if (step.status !== "REJECTED") {
+          step.status = "REJECTED";
+          step.rejectedBy = user.userId;
+          step.rejectedAt = now;
+          step.rejectionReason = reason;
+        }
       });
 
       await requisition.save();
@@ -720,41 +753,29 @@ export const rejectRequisition = async (
       });
     }
 
-    const currentStep = requisition.approvalFlow.find(
-      (s: any) => s.level === requisition.currentApprovalLevel
+    const step = requisition.approvalFlow.find((s: any) =>
+      s.roleIds.some(
+        (r: any) => r.toString() === user?.roleId.toString()
+      )
     );
 
-    if (!currentStep) {
-      throw new ApiError(400, "Invalid approval step");
+    if (!step) {
+      throw new ApiError(403, "Not authorized to reject");
     }
 
-    const isAuthorized = currentStep.roleIds.some(
-      (r: any) => r.toString() === user?.roleId.toString()
-    );
-
-    if (!isAuthorized && !isAdmin) {
-      throw new ApiError(403, "Not authorized");
+    if (step.status === "REJECTED") {
+      throw new ApiError(400, "Already rejected this level");
     }
 
-    if (currentStep.status === "REJECTED") {
-      throw new ApiError(400, "Already rejected");
-    }
-
-    currentStep.status = "REJECTED";
-    currentStep.rejectedBy = user?.userId;
-    currentStep.rejectedAt = new Date();
-    currentStep.rejectionReason = reason;
+    step.status = "REJECTED";
+    step.rejectedBy = user?.userId;
+    step.rejectedAt = now;
+    step.rejectionReason = reason;
 
     requisition.status = "REJECTED";
     requisition.approvalStatus = "REJECTED";
     requisition.rejectionReason = reason;
     requisition.rejectedBy = user?.userId;
-
-    requisition.approvalFlow.forEach((step: any) => {
-      if (step.level > currentStep.level) {
-        step.status = "PENDING";
-      }
-    });
 
     await requisition.save();
 

@@ -14,6 +14,9 @@ import { documentSchema } from "../models/tenant/documentModel";
 import { VerificationSchema } from "../models/vendor/vendorVerificationModel";
 import { VendorRoleSchema } from "../models/vendor/vendorRoleModel";
 import { CountryKYCConfigSchema } from "../models/tenant/countryKYCConfigModel";
+import { RFQSchema } from "../models/tenant/rfqModel";
+import { RFQItemSchema } from "../models/tenant/rfqItemModel";
+import { RFQVendorSchema } from "../models/tenant/rfqVendorModel";
 
 export const schemas = {
   User: userSchema,
@@ -32,4 +35,7 @@ export const schemas = {
   venodrBank:VendorBankSchema,
   VendorRole:VendorRoleSchema,
   CountryKYCConfig:CountryKYCConfigSchema,
+  RFQ:RFQSchema,
+  RFQItem:RFQItemSchema,
+  RFQVendor:RFQVendorSchema,
 };

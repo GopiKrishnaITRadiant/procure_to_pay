@@ -48,5 +48,13 @@ export const generateDocumentCode = async (connection: any) => {
   return `INV-${year}-${sequence.toString().padStart(6, "0")}`;
 }
 
+export const generateRFQNumber = async (connection: any) => {
+  const sequence = await getNextSequence(connection, "RFQ");
+
+  const year = new Date().getFullYear();
+
+  return `RFQ-${year}-${sequence.toString().padStart(6, "0")}`;
+}
+
 export const token = crypto.randomBytes(32).toString("hex");
 const expires = new Date(Date.now() + 1000 * 60 * 60);

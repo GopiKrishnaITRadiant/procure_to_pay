@@ -32,6 +32,7 @@ export const createTenant = async (
       address,
       plan = "FREE",
       phone,
+      procurementMode,
     } = req.body;
 
     if (
@@ -41,7 +42,8 @@ export const createTenant = async (
       !orgEmail ||
       !address?.street ||
       !address?.city ||
-      !address?.country
+      !address?.country||
+      !procurementMode
     ) {
       throw new ApiError(400, "Required fields missing", "VALIDATION_ERROR");
     }
@@ -80,6 +82,18 @@ export const createTenant = async (
 
       const dbName = `p2p_tenant_${companyCode}`;
 
+      let finalProcurementMode = procurementMode || "HYBRID";
+
+      let sapEnabled = false;
+
+      if (finalProcurementMode === "SAP") {
+        sapEnabled = true;
+      } else if (finalProcurementMode === "INTERNAL") {
+        sapEnabled = false;
+      } else if (finalProcurementMode === "HYBRID") {
+        sapEnabled = false; // user can enable later via integrations
+      }
+
       try {
         tenant = await tenantModel.create({
           name,
@@ -89,10 +103,27 @@ export const createTenant = async (
           companyCode,
           dbName,
           address,
+
           phone: {
-            countryCode: phone.countryCode,
-            number: phone.number,
+            countryCode: phone?.countryCode,
+            number: phone?.number,
           },
+
+          procurementMode: finalProcurementMode,
+
+          features: {
+            poModule: true,
+            rfq: true,
+            contract: false,
+            vendorPortal: false,
+          },
+
+          integrations: {
+            sap: {
+              enabled: sapEnabled,
+            },
+          },
+
           limits: {
             maxUsers: 10,
             maxVendors: 50,
