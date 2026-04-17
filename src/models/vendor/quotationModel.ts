@@ -8,7 +8,15 @@ export interface IQuotation {
 
   quotationNumber?: string;
 
-  status: "SUBMITTED" | "REVISED" | "WITHDRAWN";
+  isPartial?: boolean;
+
+  status:
+  | "DRAFT"
+  | "SUBMITTED"
+  | "REVISED"
+  | "CANCELLED"
+  | "REJECTED"
+  | "AWARDED"
 
   currency: string;
 
@@ -21,7 +29,7 @@ export interface IQuotation {
 
   deliveryDate?: Date; // overall
 
-  items: {
+  items: [{
     rfqItemId: Types.ObjectId;
 
     quantity: number;
@@ -30,7 +38,7 @@ export interface IQuotation {
 
     deliveryDate?: Date;
     remarks?: string;
-  }[];
+  }];
 
   attachments?: string[];
 
@@ -54,9 +62,11 @@ export const QuotationSchema = new Schema<IQuotation>(
 
     status: {
       type: String,
-      enum: ["SUBMITTED", "REVISED", "WITHDRAWN"],
-      default: "SUBMITTED",
+      enum: ["DRAFT", "SUBMITTED", "REVISED", "CANCELLED", "REJECTED", "AWARDED"],
+      default: "DRAFT",
     },
+
+    isPartial: { type: Boolean, default: false },
 
     currency: { type: String, default: "INR" },
 

@@ -17,6 +17,7 @@ import { CountryKYCConfigSchema } from "../models/tenant/countryKYCConfigModel";
 import { RFQSchema } from "../models/tenant/rfqModel";
 import { RFQItemSchema } from "../models/tenant/rfqItemModel";
 import { RFQVendorSchema } from "../models/tenant/rfqVendorModel";
+import { QuotationSchema } from "../models/vendor/quotationModel";
 
 export const schemas = {
   User: userSchema,
@@ -38,4 +39,5 @@ export const schemas = {
   RFQ:RFQSchema,
   RFQItem:RFQItemSchema,
   RFQVendor:RFQVendorSchema,
+  Quotation:QuotationSchema,
 };

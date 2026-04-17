@@ -23,6 +23,8 @@ import tenantAdminRoutes from "./tenant/tenantAdminRoutes"
 import countryKYCConfigRoutes from "./countryKYCConfigRoutes"
 import documentRoutes from "./tenant/documentRoutes"
 import vendorKycRoutes from "./vendor/vendorKycRoutes"
+import rfqRoutes from "./tenant/rfqRoutes"
+import quotationRoutes from "./vendor/quotationRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -58,6 +60,8 @@ apiRouter.use("/tenant/requisition",requisitionRoutes)
 apiRouter.use("/tenant/vendor",vendorRoutes)
 apiRouter.use("/tenant/document",documentRoutes)
 apiRouter.use("/vendor/",vendorKycRoutes)
+apiRouter.use("/tenant-rfq",rfqRoutes)
+apiRouter.use("/vendor-quotation",quotationRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);

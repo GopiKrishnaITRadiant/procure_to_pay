@@ -41,7 +41,7 @@ export const approveRegisteredVendor = async (req:Request, res:Response, next:Ne
 
     const adminRole = await VendorRole.findOne({
       vendorId: vendor._id,
-      name: "ADMIN",
+      name: "VENDOR_ADMIN",
     });
 
     if (!adminRole) {

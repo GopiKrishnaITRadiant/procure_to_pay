@@ -27,6 +27,10 @@ export interface IRFQ {
   vendors: Types.ObjectId[]; // invited vendors
 
   createdBy: Types.ObjectId;
+  updatedBy?: Types.ObjectId;
+  cancelledAt?: Date;
+  cancelledBy?: Types.ObjectId;
+  cancelledReason?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -82,5 +86,5 @@ export const RFQSchema = new Schema<IRFQ>(
       required: true,
     },
   },
-  { timestamps: true, versionKey: false }
+  { timestamps: true, versionKey: false },
 );
