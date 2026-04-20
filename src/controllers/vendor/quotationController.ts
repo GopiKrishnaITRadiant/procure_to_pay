@@ -96,7 +96,7 @@ export const submitQuotation = async (
     if (!rfq) throw new ApiError(404, "RFQ not found");
 
     if (rfq.status !== "SENT") {
-      throw new ApiError(400, "RFQ not open for quotations");
+      throw new ApiError(400, `RFQ status is ${rfq.status}. Cannot submit quotation`);
     }
 
     if (rfq.submissionDeadline < new Date()) {

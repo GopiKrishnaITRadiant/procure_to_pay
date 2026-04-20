@@ -7,6 +7,6 @@ const upload= createUploader()
 
 router.post("/submit/:rfqId",upload.single("file") ,submitQuotation);
 router.get("/",  getVendorRFQs);
-router.delete("/cancel",cancelQuotation)
+router.delete("/cancel/:rfqId",cancelQuotation)
 
 export default router;

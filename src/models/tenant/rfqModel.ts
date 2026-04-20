@@ -12,6 +12,7 @@ export interface IRFQ {
     | "SENT"
     | "QUOTATION_RECEIVED"
     | "EVALUATION"
+    | "PARTIALLY_AWARDED"
     | "AWARDED"
     | "CANCELLED";
 
@@ -25,6 +26,13 @@ export interface IRFQ {
   description?: string;
   paymentTerms?: string;
   vendors: Types.ObjectId[]; // invited vendors
+  awardedItems: [
+    {
+      rfqItemId: Types.ObjectId,
+      vendorId: Types.ObjectId,
+      quotationId: Types.ObjectId,
+    }
+  ];
 
   createdBy: Types.ObjectId;
   updatedBy?: Types.ObjectId;
@@ -64,6 +72,7 @@ export const RFQSchema = new Schema<IRFQ>(
         "SENT",
         "QUOTATION_RECEIVED",
         "EVALUATION",
+        "PARTIALLY_AWARDED",
         "AWARDED",
         "CANCELLED",
       ],
@@ -85,6 +94,23 @@ export const RFQSchema = new Schema<IRFQ>(
       ref: "User",
       required: true,
     },
+
+    awardedItems: [
+      {
+        rfqItemId: {
+          type: Types.ObjectId,
+          ref: "RFQItem",
+        },
+        vendorId: {
+          type: Types.ObjectId,
+          ref: "Vendor",
+        },
+        quotationId: {
+          type: Types.ObjectId,
+          ref: "Quotation",
+        },
+      },
+    ],
   },
   { timestamps: true, versionKey: false },
 );

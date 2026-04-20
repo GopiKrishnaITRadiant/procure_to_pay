@@ -158,7 +158,7 @@ export const getRFQComparison = async (
 
     const rfqItems = await RFQItem.find({ rfqId });
 
-    const quotations:IQuotation[] = await Quotation.find({ rfqId });
+    const quotations:IQuotation[] = await Quotation.find({ rfqId, status:{$in:["REVISED", "SUBMITTED"]} });
 
     const vendorIds = quotations.map((q: any) => q.vendorId);
     const vendors = await Vendor.find({ _id: { $in: vendorIds } });
@@ -234,6 +234,7 @@ export const getRFQComparison = async (
   }
 };
 
+//api for awarding and if we need to change award again we can use this api
 export const awardRFQ = async (
   req: Request,
   res: Response,
@@ -241,25 +242,133 @@ export const awardRFQ = async (
 ) => {
   try {
     const { rfqId } = req.params;
-    const { quotationId } = req.body;
+    const { awards } = req.body;
+    const user = req.user;
 
     if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+      throw new ApiError(500, "Tenant connection not found");
+    }
+
+    if (!awards || !Array.isArray(awards) || awards.length === 0) {
+      throw new ApiError(400, "Awards data is required");
     }
 
     const RFQ = req.tenantConnection.model("RFQ");
+    const RFQItem = req.tenantConnection.model("RFQItem");
     const Quotation = req.tenantConnection.model("Quotation");
 
+    // Fetch RFQ
     const rfq = await RFQ.findById(rfqId);
-
+    const rfqItems=await RFQItem.find({rfqId})
     if (!rfq) throw new ApiError(404, "RFQ not found");
 
-    const quotation = await Quotation.findById(quotationId);
+    if (rfq.status === "CANCELLED") {
+      throw new ApiError(400, "Cannot award cancelled RFQ");
+    }
 
-    if (!quotation) throw new ApiError(404, "Quotation not found");
+    if (rfq.status === "AWARDED") {
+      throw new ApiError(400, "RFQ already awarded");
+    }
 
-    rfq.status = "AWARDED";
-    rfq.awardedVendor = quotation.vendorId;
+    // Validate duplicate item awards
+    const itemIds = awards.map(a => a.rfqItemId.toString());
+    const duplicates = itemIds.filter(
+      (item, idx) => itemIds.indexOf(item) !== idx
+    );
+
+    if (duplicates.length > 0) {
+      throw new ApiError(400, "Same RFQ item cannot be awarded twice");
+    }
+
+    //Validate quotations
+    const quotationIds = [...new Set(awards.map(a => a.quotationId))];
+
+    const quotations = await Quotation.find<IQuotation>({
+      _id: { $in: quotationIds },
+      rfqId,
+    });
+
+    if (quotations.length !== quotationIds.length) {
+      throw new ApiError(400, "Invalid quotation(s) provided");
+    }
+
+    // Validate item exists inside quotation BEFORE updates
+    for (const award of awards) {
+      const quotation = quotations.find(
+        (q:any) => q._id.toString() === award.quotationId
+      );
+
+      const itemExists = quotation?.items.some(
+        i => i.rfqItemId.toString() === award.rfqItemId
+      );
+
+      if (!itemExists) {
+        throw new ApiError(400, `RFQ item ${award.rfqItemId} does not exist in quotations`);
+      }
+    }
+
+    // RESET all awards first
+    await Quotation.updateMany(
+      { rfqId },
+      {
+        $set: {
+          "items.$[].isAwarded": false,
+          isSelected: false,
+        },
+      }
+    );
+
+    // APPLY awards
+    for (const award of awards) {
+      await Quotation.updateOne(
+        {
+          _id: award.quotationId,
+          "items.rfqItemId": award.rfqItemId,
+        },
+        {
+          $set: {
+            "items.$.isAwarded": true,
+            isSelected: true,
+            approvedAt: new Date(),
+            approvedBy: user?.userId,
+          },
+        }
+      );
+    }
+
+    // RECALCULATE statuses
+    const updatedQuotations = await Quotation.find({ rfqId });
+
+    for (const quotation of updatedQuotations) {
+      const totalItems = quotation.items.length;
+      const awardedItems = quotation.items.filter((i:any) => i.isAwarded).length;
+
+      if (awardedItems === 0) {
+        quotation.status = "REJECTED";
+        quotation.rejectedAt = new Date();
+        quotation.rejectedBy = user?.userId;
+        quotation.rejectionReason = "Not selected in RFQ award";
+        quotation.isPartial = false;
+      } else if (awardedItems === totalItems) {
+        quotation.status = "AWARDED";
+        quotation.isPartial = false;
+      } else {
+        quotation.status = "PARTIALLY_AWARDED";
+        quotation.isPartial = true;
+      }
+
+      await quotation.save();
+    }
+
+    //Update RFQ status (LAST STEP)
+    const totalRFQItems = rfqItems.length;
+    const awardedCount = awards.length;
+
+    if (awardedCount === totalRFQItems) {
+      rfq.status = "AWARDED";
+    } else {
+      rfq.status = "PARTIALLY_AWARDED";
+    }
 
     await rfq.save();
 
@@ -270,8 +379,13 @@ export const awardRFQ = async (
       res,
       statusCode: 200,
       message: "RFQ awarded successfully",
-      data: rfq,
+      data: {
+        rfqId,
+        totalItems: totalRFQItems,
+        awardedItems: awardedCount,
+      },
     });
+
   } catch (err) {
     next(err);
   }
@@ -292,6 +406,8 @@ export const cancelRFQ = async (
     }
 
     const RFQ = req.tenantConnection.model("RFQ");
+    const RFQItem = req.tenantConnection.model("RFQItem");
+    const Quotation = req.tenantConnection.model("Quotation");
 
     const rfq = await RFQ.findById(rfqId);
 
@@ -324,6 +440,22 @@ export const cancelRFQ = async (
     rfq.cancellationReason = reason || null;
 
     await rfq.save();
+
+    // Cancel RFQ items
+    await RFQItem.updateMany({ rfqId: rfq._id }, { $set: { status: "CANCELLED" } });
+
+    await Quotation.updateMany(
+      { rfqId: rfq._id },
+      {
+        $set: {
+          status: "CANCELLED",
+          rejectedBy: user?.userId,
+          rejectedAt: new Date(),
+          rejectionReason: reason || "RFQ Cancelled by client",
+        },
+      }
+    );
+    //neeed to send email to vendors
 
     return sendResponse({
       res,

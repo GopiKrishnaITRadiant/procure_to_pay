@@ -56,5 +56,12 @@ export const generateRFQNumber = async (connection: any) => {
   return `RFQ-${year}-${sequence.toString().padStart(6, "0")}`;
 }
 
+export const generatePOCode = async (connection: any) => {
+  const sequence = await getNextSequence(connection, "PO");
+
+  const year = new Date().getFullYear();
+
+  return `PO-${year}-${sequence.toString().padStart(6, "0")}`;
+}
 export const token = crypto.randomBytes(32).toString("hex");
 const expires = new Date(Date.now() + 1000 * 60 * 60);

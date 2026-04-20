@@ -17,6 +17,8 @@ export interface IQuotation {
   | "CANCELLED"
   | "REJECTED"
   | "AWARDED"
+  | "CLOSED"
+  | "PARTIALLY_AWARDED";
 
   currency: string;
 
@@ -38,11 +40,19 @@ export interface IQuotation {
 
     deliveryDate?: Date;
     remarks?: string;
+    isAwarded: Boolean;
   }];
 
   attachments?: string[];
 
   submittedAt: Date;
+  isSelected: boolean;
+  approvedAt?: Date;
+  approvedBy?: Types.ObjectId;
+
+  rejectedAt?: Date;
+  rejectedBy?: Types.ObjectId;
+  rejectionReason?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -62,7 +72,7 @@ export const QuotationSchema = new Schema<IQuotation>(
 
     status: {
       type: String,
-      enum: ["DRAFT", "SUBMITTED", "REVISED", "CANCELLED", "REJECTED", "AWARDED"],
+      enum: ["DRAFT", "SUBMITTED", "REVISED", "CANCELLED", "REJECTED", "AWARDED","PARTIALLY_AWARDED","CLOSED"],
       default: "DRAFT",
     },
 
@@ -89,6 +99,7 @@ export const QuotationSchema = new Schema<IQuotation>(
 
         deliveryDate: Date,
         remarks: String,
+        isAwarded: { type: Boolean, default: false },
       },
     ],
 
@@ -98,6 +109,21 @@ export const QuotationSchema = new Schema<IQuotation>(
       type: Date,
       default: Date.now,
     },
+
+    isSelected: { type: Boolean, default: false },
+
+    approvedAt: Date,
+    approvedBy: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
+
+    rejectedAt: Date,
+    rejectedBy: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
+    rejectionReason: String,
   },
   { timestamps: true, versionKey: false }
 );

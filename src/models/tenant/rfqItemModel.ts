@@ -21,7 +21,7 @@ export interface IRFQItem {
 
   plant?: string;
 
-  status: "OPEN" | "AWARDED" | "CANCELLED";
+  status: "OPEN" | "AWARDED" | "CANCELLED" | "REJECTED" | "CLOSED" | "PENDING" | "APPROVED" | "PARTIALLY_AWARDED";
 
   awardedVendorId?: Types.ObjectId;
 
@@ -51,7 +51,7 @@ export const RFQItemSchema = new Schema<IRFQItem>(
 
     status: {
       type: String,
-      enum: ["OPEN", "AWARDED", "CANCELLED"],
+      enum: ["OPEN", "AWARDED", "CANCELLED", "REJECTED", "CLOSED","PENDING","APPROVED","PARTIALLY_AWARDED"],
       default: "OPEN",
       index: true,
     },

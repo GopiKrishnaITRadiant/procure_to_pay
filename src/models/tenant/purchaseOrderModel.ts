@@ -27,6 +27,7 @@ export interface IPurchaseOrderItem {
   invoicedQuantity?: number;
   requisitionId?: Types.ObjectId;
   rfqId?: Types.ObjectId;
+  rfqItemId?: Types.ObjectId;
   quotationId?: Types.ObjectId;
   contractId?: Types.ObjectId;
 
@@ -34,10 +35,12 @@ export interface IPurchaseOrderItem {
   externalId?: string; // SAP PO Number
 }
 
-export interface IPurchaseOrder extends Document {
+export interface IPurchaseOrder {
   _id: Types.ObjectId;
 
   tenantId: Types.ObjectId;
+  vendorId: Types.ObjectId;
+  rfqId?: Types.ObjectId;
 
   //Integration reference
   externalId?: string; // SAP PO ID
@@ -49,7 +52,7 @@ export interface IPurchaseOrder extends Document {
   purchasingOrganization: string;
   purchasingGroup?: string;
 
-  supplier: string;
+  supplierName: string;
 
   creationDate: Date;
   purchaseOrderDate: Date;
@@ -63,7 +66,14 @@ export interface IPurchaseOrder extends Document {
 
   pricingProcedure?: string;
 
-  status: "OPEN" | "PARTIALLY_RECEIVED" | "RECEIVED" | "COMPLETED" | "CANCELLED";
+  status:
+    | "CREATED"
+    | "SENT"
+    | "ACKNOWLEDGED"
+    | "PARTIALLY_RECEIVED"
+    | "RECEIVED"
+    | "COMPLETED"
+    | "CANCELLED";
 
   totalNetAmount?: number;
 
@@ -110,8 +120,19 @@ const PurchaseOrderItemSchema = new Schema<IPurchaseOrderItem>(
 
     receivedQuantity: { type: Number, default: 0 },
     invoicedQuantity: { type: Number, default: 0 },
+
+    // ✅ ADD THESE (CRITICAL)
+    rfqId: { type: Types.ObjectId, ref: "RFQ", index: true },
+    rfqItemId: { type: Types.ObjectId, index: true },
+    quotationId: { type: Types.ObjectId, ref: "Quotation", index: true },
+
+    // Optional future
+    requisitionId: { type: Types.ObjectId },
+    contractId: { type: Types.ObjectId },
+
+    externalId: { type: String }, // SAP item id if needed
   },
-  { _id: true }
+  { _id: true },
 );
 
 export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
@@ -136,7 +157,17 @@ export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
     purchasingOrganization: { type: String, required: true },
     purchasingGroup: { type: String },
 
-    supplier: { type: String, required: true, index: true },
+    //  use vendorId instead of string
+    vendorId: {
+      type: Types.ObjectId,
+      ref: "Vendor",
+      required: true,
+    },
+
+    // Optional display field
+    supplierName: { type: String },
+
+    rfqId: { type: Types.ObjectId, ref: "RFQ", index: true },
 
     creationDate: { type: Date, required: true },
     purchaseOrderDate: { type: Date, required: true },
@@ -152,8 +183,16 @@ export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
 
     status: {
       type: String,
-      enum: ["OPEN", "PARTIALLY_RECEIVED", "RECEIVED", "COMPLETED", "CANCELLED"],
-      default: "OPEN",
+      enum: [
+        "CREATED",
+        "SENT",
+        "ACKNOWLEDGED",
+        "PARTIALLY_RECEIVED",
+        "RECEIVED",
+        "COMPLETED",
+        "CANCELLED",
+      ],
+      default: "CREATED",
       index: true,
     },
 
@@ -167,13 +206,13 @@ export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
     source: {
       type: String,
       enum: ["SAP", "DIRECT", "RFQ", "CONTRACT"],
-      default: "SAP",
+      default: "RFQ",
     },
 
     syncStatus: {
       type: String,
       enum: ["SYNCED", "PENDING", "FAILED"],
-      default: "SYNCED",
+      default: "PENDING",
     },
 
     lastSyncedAt: { type: Date },
@@ -181,14 +220,10 @@ export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
     createdBy: { type: Schema.Types.ObjectId },
     updatedBy: { type: Schema.Types.ObjectId },
   },
-  { timestamps: true, versionKey:false }
+  { timestamps: true, versionKey: false },
 );
-
+PurchaseOrderSchema.index({ rfqId: 1, tenantId: 1 });
 PurchaseOrderSchema.index(
-  { tenantId: 1, purchaseOrderNumber: 1 },
+  { rfqId: 1, vendorId: 1, tenantId: 1 },
   { unique: true }
 );
-
-PurchaseOrderSchema.index({ supplier: 1, tenantId: 1 });
-PurchaseOrderSchema.index({ status: 1, tenantId: 1 });
-PurchaseOrderSchema.index({ creationDate: -1 });
