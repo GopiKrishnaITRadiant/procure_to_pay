@@ -156,37 +156,30 @@ export async function createDirectPurchaseOrder(
 export async function createRFQPurchaseOrder(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) {
   try {
-    const { rfqId } = req.params;
+    const { tenantConnection, user, params } = req;
+    const { rfqId } = params;
 
-    if (!req.tenantConnection) {
+    if (!tenantConnection) {
       throw new ApiError(500, "Tenant connection not found");
     }
 
-    const RFQ = req.tenantConnection.model("RFQ");
-    const Quotation = req.tenantConnection.model("Quotation");
-    const PO = req.tenantConnection.model("PurchaseOrder");
+    const RFQ = tenantConnection.model("RFQ");
+    const Quotation = tenantConnection.model("Quotation");
+    const PO = tenantConnection.model("PurchaseOrder");
 
     const rfq = await RFQ.findById(rfqId);
-
     if (!rfq) throw new ApiError(404, "RFQ not found");
 
     if (!["AWARDED", "PARTIALLY_AWARDED"].includes(rfq.status)) {
       throw new ApiError(400, "RFQ not awarded yet");
     }
 
-    // ❌ Prevent duplicate PO creation
-    const existingPO = await PO.findOne({ rfqId });
-    if (existingPO) {
-      throw new ApiError(400, "PO already created for this RFQ");
-    }
-
-    // ✅ Fetch quotations
     const quotations = await Quotation.find({ rfqId });
 
-    // ✅ Group awarded items by vendor
+    //Group awarded items by vendor
     const vendorMap: Record<string, any[]> = {};
 
     for (const quotation of quotations) {
@@ -201,7 +194,7 @@ export async function createRFQPurchaseOrder(
       }
 
       vendorMap[vendorId].push({
-        quotationId: quotation._id,
+        quotation,
         items: awardedItems,
       });
     }
@@ -210,48 +203,76 @@ export async function createRFQPurchaseOrder(
       throw new ApiError(400, "No awarded items found");
     }
 
-    const createdPOs: any[] = [];
+    const createdPOs = [];
 
-    // ✅ Create PO per vendor
+    // Create PO per vendor
     for (const vendorId in vendorMap) {
-      const vendorData = vendorMap[vendorId];
+      const entries = vendorMap[vendorId];
+      if (!entries || entries.length === 0) continue;
 
-      if (!vendorData || vendorData.length === 0) continue;
+      // Prevent duplicate PO per vendor
+      const existingVendorPO = await PO.findOne({ rfqId, vendorId });
+      if (existingVendorPO) continue;
 
       let itemCounter = 1;
       const poItems: any[] = [];
+      let currency: string | null = null;
 
-      vendorData.forEach((q) => {
-        q.items.forEach((item: any) => {
+      for (const entry of entries) {
+        const quotation = entry.quotation;
+
+        if (!currency) currency = quotation.currency;
+        if (currency !== quotation.currency) {
+          throw new ApiError(
+            400,
+            "Multi-currency PO not supported for RFQ flow"
+          );
+        }
+
+        for (const item of entry.items) {
+          console.log(item);
+          const priceInMinor = Math.round(Number(item.unitPrice) * 100);
+
           poItems.push({
             itemNumber: `${itemCounter++ * 10}`,
-            quantity: item.quantity,
-            unitOfMeasure: "EA", // adjust if needed
-            netPrice: item.unitPrice,
-            currency: quotation.currency || "INR",
+            description: item.description || "RFQ Item",
+            quantity: Number(item.quantity),
+            unitOfMeasure: item.unitOfMeasure || "EA",
+            netPrice: Number(item.unitPrice),
+            currency,
+            deliveryDate: item.deliveryDate
+              ? new Date(item.deliveryDate)
+              : null,
 
             rfqId,
             rfqItemId: item.rfqItemId,
-            quotationId: q.quotationId,
+            quotationId: quotation._id,
 
-            deliveryDate: item.deliveryDate,
+            _priceInMinor: priceInMinor,
           });
-        });
-      });
+        }
+      }
 
-      const totalNetAmount = poItems.reduce(
-        (sum, i) => sum + i.netPrice * i.quantity,
-        0,
+      // Safe total calculation
+      const totalInMinor = poItems.reduce(
+        (sum, i) => sum + i._priceInMinor * i.quantity,
+        0
       );
 
+      const totalNetAmount = Number((totalInMinor / 100).toFixed(2));
+
+      // remove internal
+      poItems.forEach((i) => delete i._priceInMinor);
+
       const po = await PO.create({
-        tenantId: req.user?.tenantId,
-        purchaseOrderNumber: `PO-${Date.now()}-${vendorId.slice(-4)}`,
+        tenantId: user?.tenantId,
+        purchaseOrderNumber: await generatePOCode(tenantConnection),
         purchaseOrderType: "NB",
-        companyCode: rfq.companyCode || "1000",
-        purchasingOrganization: rfq.purchasingOrganization || "1000",
+        companyCode: rfq.companyCode||"DEFAULT",
+        purchasingOrganization: rfq.purchasingOrganization||"DEFAULT",
+        purchasingGroup: rfq.purchasingGroup,
         vendorId,
-        currency: "INR",
+        currency,
         creationDate: new Date(),
         purchaseOrderDate: new Date(),
         items: poItems,
@@ -259,15 +280,15 @@ export async function createRFQPurchaseOrder(
         source: "RFQ",
         status: "CREATED",
         rfqId,
-        createdBy: req.user?.userId,
+        createdBy: user?.userId,
       });
 
       createdPOs.push(po);
     }
 
-    // ✅ Update RFQ
-    rfq.status = "PO_CREATED";
-    await rfq.save();
+    if (createdPOs.length === 0) {
+      throw new ApiError(400, "PO already created for all awarded vendors");
+    }
 
     return sendResponse({
       res,
@@ -275,6 +296,7 @@ export async function createRFQPurchaseOrder(
       message: "PO(s) created from RFQ successfully",
       data: createdPOs,
     });
+
   } catch (error) {
     next(error);
   }

@@ -11,9 +11,9 @@ export interface IRequisitionItem {
 
   quantity: number;
   unitOfMeasure: string;
+  pricePerUnit?: number;
 
   estimatedPrice?: number;
-  currency?: string;
 
   requiredDate: Date;
 
@@ -38,7 +38,8 @@ const RequisitionItemSchema = new Schema<IRequisitionItem>(
     unitOfMeasure: { type: String, required: true },
 
     estimatedPrice: { type: Number },
-    currency: { type: String },
+
+    pricePerUnit: { type: Number, trim: true },
 
     requiredDate: { type: Date, required: true },
 

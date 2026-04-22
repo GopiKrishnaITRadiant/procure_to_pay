@@ -108,9 +108,6 @@ export const createRequisition = async (
 
         estimatedPrice:
           materialData?.price ?? item.estimatedPrice ?? 0,
-
-        currency: materialData?.currency || item.currency || currency,
-
         requiredDate: new Date(item.requiredDate) || new Date(requiredDate),
 
         plant: item.plant,
@@ -363,7 +360,6 @@ export const updateRequisition = async (
       0
     );
 
-    // ✅ Update fields
     existingRequisition.department =
       department ?? existingRequisition.department;
 

@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { seedSuperAdmin } from "./superAdmin.seed";
 import { seedPlans } from "./plan.seed";
 import { seedIntegrations } from "./integration.seed";
+import { seedUOMMaster } from "./uomSeed";
 
 
 dotenv.config({ path: ".env.dev" });
@@ -14,6 +15,7 @@ async function runSeeds() {
     await seedSuperAdmin();
     await seedPlans();
     await seedIntegrations()
+    await seedUOMMaster();
 
     console.log("All seeds executed successfully");
     process.exit(0);

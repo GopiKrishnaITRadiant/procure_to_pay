@@ -228,6 +228,6 @@ export const seedIntegrations = async () => {
   } catch (error) {
     console.error("Seeder failed:", error);
   } finally {
-    await mongoose.connection.close();
+    // await mongoose.connection.close();
   }
 };

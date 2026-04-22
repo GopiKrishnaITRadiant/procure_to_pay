@@ -25,6 +25,7 @@ import documentRoutes from "./tenant/documentRoutes"
 import vendorKycRoutes from "./vendor/vendorKycRoutes"
 import rfqRoutes from "./tenant/rfqRoutes"
 import quotationRoutes from "./vendor/quotationRoutes"
+import purchaseOrderRoutes from "./tenant/purchaseOrderRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -62,6 +63,7 @@ apiRouter.use("/tenant/document",documentRoutes)
 apiRouter.use("/vendor/",vendorKycRoutes)
 apiRouter.use("/tenant-rfq",rfqRoutes)
 apiRouter.use("/vendor-quotation",quotationRoutes)
+apiRouter.use("/tenant/purchase-order",purchaseOrderRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);
