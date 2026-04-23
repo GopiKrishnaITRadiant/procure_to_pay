@@ -7,6 +7,7 @@ import { generateVendorCode } from "../../utils/codeGenerator";
 import { seedVendorRoles } from "../../helpers/vendorRoleSeed";
 import { getTenantConnection } from "../../core/tenantConnection";
 import tenantModel from "../../models/tenantModel";
+import { getCurrnecyByCountry } from "../../services/currencyService";
 
 export const registerVendor = async (
   req: Request,
@@ -51,6 +52,7 @@ export const registerVendor = async (
     }
 
     const code =await generateVendorCode(tenantConnection);
+    const currencyDoc=await getCurrnecyByCountry(country);
 
     const vendor = await Vendor.create({
       companyName:name,
@@ -64,6 +66,7 @@ export const registerVendor = async (
       phone,
       phoneCountryCode,
       country,
+      currency:currencyDoc?.code,
       vendorCategory,
 
       isActive: false,

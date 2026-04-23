@@ -17,6 +17,7 @@ import defaultRoles, {
   defaultMaterials,
 } from "../utils/constants";
 import { IntegrationTemplateModel } from "../models/integrationTemplateModel";
+import { getCurrnecyByCountry } from "../services/currencyService";
 
 export const createTenant = async (
   req: Request,
@@ -94,6 +95,11 @@ export const createTenant = async (
         sapEnabled = false; // user can enable later via integrations
       }
 
+      const currnecyDoc=await getCurrnecyByCountry(address.country);
+      if(!currnecyDoc){
+        throw new ApiError(500, "Currency not found", "NOT_FOUND");
+      }
+
       try {
         tenant = await tenantModel.create({
           name,
@@ -103,6 +109,7 @@ export const createTenant = async (
           companyCode,
           dbName,
           address,
+          baseCurrency:currnecyDoc.code,
 
           phone: {
             countryCode: phone?.countryCode,

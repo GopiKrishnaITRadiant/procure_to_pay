@@ -5,6 +5,7 @@ export interface IUOMConversion {
 
   fromUOM: string; // KG
   toUOM: string; // G
+  description?: string;
 
   category: "COUNT" | "WEIGHT" | "VOLUME" | "LENGTH" | "AREA";
 
@@ -31,6 +32,11 @@ const UOMConversionSchema = new Schema<IUOMConversion>(
       required: true,
       uppercase: true,
       index: true,
+    },
+
+    description: {
+      type: String,
+      trim: true,
     },
 
     category: {

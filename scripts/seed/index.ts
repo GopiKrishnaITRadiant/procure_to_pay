@@ -4,6 +4,7 @@ import { seedSuperAdmin } from "./superAdmin.seed";
 import { seedPlans } from "./plan.seed";
 import { seedIntegrations } from "./integration.seed";
 import { seedUOMMaster } from "./uomSeed";
+import { seedCurrency } from "./seedCurrency";
 
 
 dotenv.config({ path: ".env.dev" });
@@ -12,10 +13,11 @@ async function runSeeds() {
   try {
     await mongoose.connect(process.env.MONGODB_URI!);
 
-    await seedSuperAdmin();
-    await seedPlans();
-    await seedIntegrations()
+    // await seedSuperAdmin();
+    // await seedPlans();
+    // await seedIntegrations()
     await seedUOMMaster();
+    await seedCurrency();
 
     console.log("All seeds executed successfully");
     process.exit(0);

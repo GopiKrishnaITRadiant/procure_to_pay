@@ -12,6 +12,7 @@ interface IAuthUser {
   userType: "TENANT" | "PLATFORM" | "VENDOR";
   companyCode:string
   vendorId?: string
+  currency?: string
 }
 
 declare global {

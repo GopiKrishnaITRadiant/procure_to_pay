@@ -3,6 +3,7 @@ import { Schema, Types, model } from "mongoose";
 export interface ICurrency {
   _id: Types.ObjectId;
   country: string;
+  code: string;
   symbol: string;
   // Number of decimal digits to display for the currency
   decimalDigits: number;
@@ -16,6 +17,10 @@ const currencySchema = new Schema<ICurrency>(
     country: {
       type: String,
       required: true,
+    },
+    code: {
+      type: String,
+      unique: true,
     },
     symbol: {
       type: String,

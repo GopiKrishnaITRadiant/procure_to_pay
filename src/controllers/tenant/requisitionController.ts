@@ -35,7 +35,7 @@ export const createRequisition = async (
     if (!Array.isArray(items) || items.length === 0) {
       throw new ApiError(400, "Items are required", "VALIDATION_ERROR");
     }
-
+    // check if idempotency key already exists && prevent multiple api calls
     if (idempotencyKey) {
       const existing = await Requisition.findOne({
         idempotencyKey: idempotencyKey,
@@ -133,7 +133,7 @@ export const createRequisition = async (
       requester: user.userId,
       department,
       requiredDate,
-      currency,
+      currency: currency || req.user?.currency,
 
       items: processedItems,
 

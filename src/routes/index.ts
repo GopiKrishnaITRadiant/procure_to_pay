@@ -26,6 +26,11 @@ import vendorKycRoutes from "./vendor/vendorKycRoutes"
 import rfqRoutes from "./tenant/rfqRoutes"
 import quotationRoutes from "./vendor/quotationRoutes"
 import purchaseOrderRoutes from "./tenant/purchaseOrderRoutes"
+import uomRoutes from "./uomRoutes"
+import uomConversionRoutes from "./uomConverstionRoutes"
+import currencyRoutes from "./currencyRoutes"
+import exchangeRateRoutes from "./exchangeRateRoutes"
+import tenantExchangeRoutes from "./tenant/tenantExchangeRoutes"
 
 const router = Router();
 const apiRouter = Router();
@@ -45,6 +50,10 @@ apiRouter.use("/integrations", integrationRoutes);
 apiRouter.use("/integration-templates",integrationTemplateRoutes)
 apiRouter.use("/terms",termsRoutes)
 apiRouter.use("/countryKYCConfig",countryKYCConfigRoutes)
+apiRouter.use("/uom",uomRoutes)
+apiRouter.use("/uom-conversions",uomConversionRoutes)
+apiRouter.use("/currency",currencyRoutes)
+apiRouter.use("/exchange-rate",exchangeRateRoutes)
 
 //tenant admin routes
 apiRouter.use("/tenant/admin",tenantAdminRoutes)
@@ -64,6 +73,7 @@ apiRouter.use("/vendor/",vendorKycRoutes)
 apiRouter.use("/tenant-rfq",rfqRoutes)
 apiRouter.use("/vendor-quotation",quotationRoutes)
 apiRouter.use("/tenant/purchase-order",purchaseOrderRoutes)
+apiRouter.use("/tenant-exchange-rates",tenantExchangeRoutes)
 
 //Versioning
 router.use("/api/v1", apiRouter);

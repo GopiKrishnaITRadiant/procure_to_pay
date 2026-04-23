@@ -38,6 +38,7 @@ export interface IVendor {
   phoneCountryCode?: string;
 
   country: string;
+  currency: string;
 
   capabilities: {
     portalAccess: boolean;
@@ -128,6 +129,8 @@ export const VendorSchema = new Schema<IVendor>(
     phoneCountryCode: { type: String },
 
     country: { type: String, required: true },
+
+    currency: { type: String, required: false },
 
     capabilities: {
       portalAccess: { type: Boolean, default: false },

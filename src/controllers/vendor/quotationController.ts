@@ -139,6 +139,10 @@ export const submitQuotation = async (
     const rfqItems = await RFQItem.find({ rfqId }).lean();
     const rfqItemIds = rfqItems.map((i: any) => i._id.toString());
 
+    const rfqItemMap = new Map(
+      rfqItems.map((i: any) => [i._id.toString(), i])
+    );
+
     items = items.map((item: any) => {
       if (!rfqItemIds.includes(item.rfqItemId)) {
         throw new ApiError(400, `Invalid RFQ item: ${item.rfqItemId}`);
@@ -148,14 +152,23 @@ export const submitQuotation = async (
         throw new ApiError(400, `Invalid quantity for item ${item.rfqItemId}`);
       }
 
-      if (item.unitPrice == null || item.unitPrice < 0) {
+      if (!item.unitPrice || item.unitPrice < 0) {
         throw new ApiError(400, `Invalid price for item ${item.rfqItemId}`);
+      }
+
+      if (item.quantity > rfqItemMap.get(item.rfqItemId).quantity) {
+        throw new ApiError(400, "Quoted quantity exceeds RFQ quantity");
+      }
+      
+      if (!item.unitOfMeasure) {
+        throw new ApiError(400, `UOM required for item ${item.rfqItemId}`);
       }
 
       return {
         rfqItemId: item.rfqItemId,
         quantity: Number(item.quantity),
         unitPrice: Number(item.unitPrice),
+        unitOfMeasure: item.unitOfMeasure,
         totalPrice:
           Number(item.totalPrice) ||
           Number(item.quantity) * Number(item.unitPrice),

@@ -70,7 +70,7 @@ export const ExchangeRateSchema = new Schema<IExchangeRate>(
   },
 );
 
-export const ExchangeRate = model<IExchangeRate>(
+export const exchangeRatesModel = model<IExchangeRate>(
   "ExchangeRate",
   ExchangeRateSchema,
 );

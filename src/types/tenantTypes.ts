@@ -33,12 +33,17 @@ export interface ITenant {
   };
 
   dbName: string;
+  baseCurrency: string;
 
   features: {
     poModule: boolean;
     rfq: boolean;
     contract: boolean;
     vendorPortal: boolean;
+    directPO: boolean;
+    uomCustomization: boolean;
+    uomMapping: boolean;
+    exchangeRateOverride: boolean;
   },
 
   procurementMode: "INTERNAL" | "SAP" | "HYBRID",

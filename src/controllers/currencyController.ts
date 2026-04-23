@@ -19,7 +19,7 @@ export const createCurrency = async (
   next: NextFunction
 ) => {
   try {
-    let { country, symbol, decimalDigits = 2, isActive = true } = req.body;
+    let { country,countryCode, symbol, decimalDigits = 2, isActive = true } = req.body;
 
     validateInput(country, symbol);
 
@@ -41,6 +41,7 @@ export const createCurrency = async (
     const currency = await currencyModel.create({
       country,
       symbol,
+      code: countryCode,
       decimalDigits,
       isActive,
     });
@@ -56,8 +57,7 @@ export const createCurrency = async (
   }
 };
 
-
-export const getCurrencies = async (
+export const getAllCurrencies = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -118,7 +118,7 @@ export const updateCurrency = async (
 
     if (isActive !== undefined) update.isActive = isActive;
 
-    // ✅ Build OR conditions safely
+    // Build OR conditions safely
     const orConditions: any[] = [];
 
     if (update.name) orConditions.push({ name: update.name });
@@ -137,7 +137,7 @@ export const updateCurrency = async (
 
     const currency = await currencyModel.findByIdAndUpdate(
       req.params.id,
-      { $set: update }, // ✅ always use $set (best practice)
+      { $set: update },
       { new: true }
     );
 

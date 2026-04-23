@@ -33,7 +33,7 @@ export interface IQuotation {
 
   items: [{
     rfqItemId: Types.ObjectId;
-
+    unitOfMeasure: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -93,6 +93,10 @@ export const QuotationSchema = new Schema<IQuotation>(
       {
         rfqItemId: { type: Types.ObjectId, required: true },
 
+        unitOfMeasure:{
+          type: String,
+          required: true,
+        },
         quantity: Number,
         unitPrice: Number,
         totalPrice: Number,

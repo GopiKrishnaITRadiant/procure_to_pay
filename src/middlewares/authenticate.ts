@@ -5,6 +5,7 @@ import { IRole } from "../models/tenant/rolesModel";
 import { platformUserModel } from "../models/platformUserModel";
 import { ApiError } from "../utils/apiErrors";
 import { ENV } from "../config/env";
+import tenantModel from "../models/tenantModel";
 
 interface AuthJwtPayload {
   userId: string;
@@ -63,6 +64,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       req.tenantConnection = connection;
 
       const User = connection.model("User");
+      const tenantDoc=await tenantModel.findById(decoded.tenantId)
+
+      if(!tenantDoc){
+        throw new ApiError(401,"Tenant not found")
+      }
 
       const user = await User.findById(decoded.userId)
         .populate("role")
@@ -81,6 +87,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         role: (user.role as IRole).name,
         permissions: (user.role as IRole).permissions,
         approvalLimit: user.approvalLimit,
+        currency:tenantDoc.baseCurrency
       };
 
       return next();
@@ -132,6 +139,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         role: role?.name,
         permissions: role?.permissions || [],
         // email: vendorUser.email,
+        currency:vendor.currency
       };
 
       return next();

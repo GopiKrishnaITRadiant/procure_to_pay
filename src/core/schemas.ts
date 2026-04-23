@@ -19,6 +19,9 @@ import { RFQItemSchema } from "../models/tenant/rfqItemModel";
 import { RFQVendorSchema } from "../models/tenant/rfqVendorModel";
 import { QuotationSchema } from "../models/vendor/quotationModel";
 import { PurchaseOrderSchema } from "../models/tenant/purchaseOrderModel";
+import { TenantExchangeRateSchema } from "../models/tenant/tenantExchangeRateModel";
+import { TenantUOMSchema } from "../models/tenant/tenantUomModel";
+import { TenantUOMMappingSchema } from "../models/tenant/tenantUomMappingModel";
 
 export const schemas = {
   User: userSchema,
@@ -42,4 +45,7 @@ export const schemas = {
   RFQVendor:RFQVendorSchema,
   Quotation:QuotationSchema,
   PurchaseOrder:PurchaseOrderSchema,
+  TenantExchangeRate:TenantExchangeRateSchema,
+  TenantUOM:TenantUOMSchema,
+  TenantUOMMapping:TenantUOMMappingSchema
 };

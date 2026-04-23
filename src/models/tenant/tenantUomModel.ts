@@ -19,7 +19,7 @@ export interface ITenantUOM {
   updatedAt: Date;
 }
 
-const TenantUOMSchema = new Schema<ITenantUOM>(
+export const TenantUOMSchema = new Schema<ITenantUOM>(
   {
     tenantId: {
       type: Schema.Types.ObjectId,

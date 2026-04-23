@@ -80,6 +80,9 @@ const tenantSchema = new Schema<ITenant>(
       directPO: { type: Boolean, default: false },
       rfq: { type: Boolean, default: false },
       contract: { type: Boolean, default: false },
+      uomCustomization: { type: Boolean, default: false },
+      uomMapping: { type: Boolean, default: false },
+      exchangeRateOverride: { type: Boolean, default: false }
     },
     
     security: {
