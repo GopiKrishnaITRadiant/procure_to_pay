@@ -63,5 +63,22 @@ export const generatePOCode = async (connection: any) => {
 
   return `PO-${year}-${sequence.toString().padStart(6, "0")}`;
 }
+
+export const generateInvoiceCode = async (connection: any) => {
+  const sequence = await getNextSequence(connection, "INV");
+
+  const year = new Date().getFullYear();
+
+  return `INV-${year}-${sequence.toString().padStart(6, "0")}`;
+}
+
+export const generateGRNCode = async (connection: any) => {
+  const sequence = await getNextSequence(connection, "GRN");
+
+  const year = new Date().getFullYear();
+
+  return `GRN-${year}-${sequence.toString().padStart(6, "0")}`;
+}
+
 export const token = crypto.randomBytes(32).toString("hex");
 const expires = new Date(Date.now() + 1000 * 60 * 60);

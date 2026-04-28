@@ -121,7 +121,7 @@ const PurchaseOrderItemSchema = new Schema<IPurchaseOrderItem>(
     receivedQuantity: { type: Number, default: 0 },
     invoicedQuantity: { type: Number, default: 0 },
 
-    // ✅ ADD THESE (CRITICAL)
+    // ADD THESE (CRITICAL)
     rfqId: { type: Types.ObjectId, ref: "RFQ", index: true },
     rfqItemId: { type: Types.ObjectId, index: true },
     quotationId: { type: Types.ObjectId, ref: "Quotation", index: true },

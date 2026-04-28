@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../utils/apiErrors";
 import { sendResponse } from "../../utils/sendResponse";
+import { UOMConversionModel } from "../../models/uomConversionModel";
 
 export const getVendorRFQs = async (
   req: Request,
@@ -76,131 +77,329 @@ export const getVendorRFQs = async (
 export const submitQuotation = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const { rfqId } = req.params;
-    let { items, totalAmount, currency } = req.body;
+
+    let {
+      items,
+      tax = 0,
+      shippingCost = 0,
+      paymentTerms,
+      creditPeriod,
+      deliveryDate,
+      attachments = [],
+    } = req.body;
+
     const { user } = req;
 
     if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found", "INTERNAL_ERROR");
+      throw new ApiError(
+        500,
+        "Tenant connection not found",
+        "INTERNAL_ERROR"
+      );
     }
 
     const RFQ = req.tenantConnection.model("RFQ");
     const RFQItem = req.tenantConnection.model("RFQItem");
     const Quotation = req.tenantConnection.model("Quotation");
+    const QuotationItem = req.tenantConnection.model("QuotationItem");
     const Vendor = req.tenantConnection.model("Vendor");
 
     const rfq = await RFQ.findById(rfqId);
-    if (!rfq) throw new ApiError(404, "RFQ not found");
+
+    if (!rfq) {
+      throw new ApiError(404, "RFQ not found");
+    }
 
     if (rfq.status !== "SENT") {
-      throw new ApiError(400, `RFQ status is ${rfq.status}. Cannot submit quotation`);
+      throw new ApiError(
+        400,
+        `RFQ status is ${rfq.status}. Cannot submit quotation`
+      );
     }
 
     if (rfq.submissionDeadline < new Date()) {
       throw new ApiError(400, "RFQ submission deadline passed");
     }
 
-    // Vendor check
+    // ---------------- Vendor Validation ----------------
     const vendor = await Vendor.findById(user?.vendorId);
-    if (!vendor) throw new ApiError(404, "Vendor not found");
+
+    if (!vendor) {
+      throw new ApiError(404, "Vendor not found");
+    }
 
     if (!vendor.capabilities?.canParticipateInRFQ) {
-      throw new ApiError(403, "Vendor not allowed to participate in RFQ");
+      throw new ApiError(
+        403,
+        "Vendor not allowed to participate in RFQ"
+      );
     }
 
-    if (
-      !rfq.vendors.some(
-        (v: any) => v.toString() === user?.vendorId?.toString(),
-      )
-    ) {
-      throw new ApiError(403, "You are not invited to this RFQ");
+    const invited = rfq.vendors.some(
+      (id: any) =>
+        id.toString() === user?.vendorId?.toString()
+    );
+
+    if (!invited) {
+      throw new ApiError(
+        403,
+        "You are not invited to this RFQ"
+      );
     }
 
+    // ---------------- Duplicate Check ----------------
     const existingQuotation = await Quotation.findOne({
       rfqId,
       vendorId: user?.vendorId,
     });
 
     if (existingQuotation) {
-      throw new ApiError(400, "Quotation already submitted");
+      throw new ApiError(
+        400,
+        "Quotation already submitted"
+      );
     }
 
     if (typeof items === "string") {
       items = JSON.parse(items);
     }
 
-    if (!items || items.length === 0) {
-      throw new ApiError(400, "At least one item must be quoted");
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ApiError(
+        400,
+        "At least one item must be quoted"
+      );
     }
 
     const rfqItems = await RFQItem.find({ rfqId }).lean();
-    const rfqItemIds = rfqItems.map((i: any) => i._id.toString());
 
     const rfqItemMap = new Map(
-      rfqItems.map((i: any) => [i._id.toString(), i])
+      rfqItems.map((item: any) => [
+        item._id.toString(),
+        item,
+      ])
     );
 
-    items = items.map((item: any) => {
-      if (!rfqItemIds.includes(item.rfqItemId)) {
-        throw new ApiError(400, `Invalid RFQ item: ${item.rfqItemId}`);
-      }
+    const processedItems = await Promise.all(
+      items.map(async (item: any, index: number) => {
+        const rfqItem = rfqItemMap.get(
+          item.rfqItemId?.toString()
+        );
 
-      if (!item.quantity || item.quantity <= 0) {
-        throw new ApiError(400, `Invalid quantity for item ${item.rfqItemId}`);
-      }
+        if (!rfqItem) {
+          throw new ApiError(
+            400,
+            `Invalid RFQ item at line ${index + 1}`
+          );
+        }
 
-      if (!item.unitPrice || item.unitPrice < 0) {
-        throw new ApiError(400, `Invalid price for item ${item.rfqItemId}`);
-      }
+        const quantity = Number(item.quantity);
+        const unitPrice = Number(item.unitPrice);
 
-      if (item.quantity > rfqItemMap.get(item.rfqItemId).quantity) {
-        throw new ApiError(400, "Quoted quantity exceeds RFQ quantity");
-      }
-      
-      if (!item.unitOfMeasure) {
-        throw new ApiError(400, `UOM required for item ${item.rfqItemId}`);
-      }
+        if (!quantity || quantity <= 0) {
+          throw new ApiError(
+            400,
+            `Invalid quantity at line ${index + 1}`
+          );
+        }
 
-      return {
-        rfqItemId: item.rfqItemId,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        unitOfMeasure: item.unitOfMeasure,
-        totalPrice:
-          Number(item.totalPrice) ||
-          Number(item.quantity) * Number(item.unitPrice),
-      };
-    });
+        if (
+          Number.isNaN(unitPrice) ||
+          unitPrice < 0
+        ) {
+          throw new ApiError(
+            400,
+            `Invalid unit price at line ${index + 1}`
+          );
+        }
 
-    const calculatedTotalAmount = items.reduce(
-      (sum: number, item: any) => sum + item.totalPrice,
-      0,
+        if (!item.unitOfMeasure) {
+          throw new ApiError(
+            400,
+            `UOM required at line ${index + 1}`
+          );
+        }
+
+        let convertedQuantity = quantity;
+        let convertedUnitPrice = unitPrice;
+        let normalizedUOM = item.unitOfMeasure;
+
+        // ---------- UOM Conversion ----------
+        if (
+          item.unitOfMeasure !==
+          rfqItem.unitOfMeasure
+        ) {
+          const conversion =
+            await UOMConversionModel.findOne({
+              fromUOM: item.unitOfMeasure,
+              toUOM: rfqItem.unitOfMeasure,
+              isActive: true,
+            });
+
+          if (!conversion) {
+            throw new ApiError(
+              400,
+              `UOM conversion not configured (${item.unitOfMeasure} -> ${rfqItem.unitOfMeasure})`
+            );
+          }
+
+          convertedQuantity =
+            quantity * Number(conversion.factor);
+
+          convertedUnitPrice =
+            unitPrice / Number(conversion.factor);
+
+          normalizedUOM =
+            rfqItem.unitOfMeasure;
+        }
+
+        // Validate after conversion
+        if (
+          convertedQuantity >
+          Number(rfqItem.quantity)
+        ) {
+          throw new ApiError(
+            400,
+            `Quoted quantity exceeds RFQ quantity at line ${index + 1}`
+          );
+        }
+
+        const totalPrice =
+          quantity * unitPrice;
+
+        const convertedLineAmount =
+          convertedQuantity *
+          convertedUnitPrice;
+
+        return {
+          quotationId: null,
+
+          rfqItemId: rfqItem._id,
+
+          quotedQuantity: quantity,
+          quotedUnitPrice: unitPrice,
+          quotedLineAmount: totalPrice,
+          quotedUnitOfMeasure:
+            item.unitOfMeasure,
+
+          rfqUnitOfMeasure:
+            rfqItem.unitOfMeasure,
+
+          convertedQuantity,
+          convertedUnitPrice,
+          convertedLineAmount,
+          isAwarded: false,
+        };
+      })
     );
 
-    const finalTotalAmount =
-      typeof totalAmount === "number" && totalAmount > 0
-        ? totalAmount
-        : calculatedTotalAmount;
+    // ---------------- Totals ----------------
+    tax = Number(tax) || 0;
+    shippingCost = Number(shippingCost) || 0;
 
+    const totalAmount =
+      processedItems.reduce(
+        (sum: number, item: any) =>
+          sum + item.totalPrice,
+        0
+      );
+
+    const grandTotalAmount =
+      totalAmount + tax + shippingCost;
+
+    // ---------------- Currency ----------------
+    const quotationCurrency =
+      vendor.currency ||
+      rfq.currency ||
+      "INR";
+
+    const baseCurrency =
+      rfq.baseCurrency ||
+      rfq.currency ||
+      "INR";
+
+    let exchangeRate = 1;
+
+    if (
+      quotationCurrency !== baseCurrency
+    ) {
+      // Replace with live FX service
+      exchangeRate = 83;
+    }
+
+    const baseTotalAmount =
+      totalAmount * exchangeRate;
+
+    const baseTaxAmount =
+      tax * exchangeRate;
+
+    const baseShippingAmount =
+      shippingCost * exchangeRate;
+
+    const baseGrandTotalAmount =
+      grandTotalAmount * exchangeRate;
+
+    // ---------------- Create Header ----------------
     const quotation = await Quotation.create({
       rfqId,
       vendorId: user?.vendorId,
-      items,
-      totalAmount: finalTotalAmount,
-      currency: currency || rfq.currency,
-      isPartial: items.length < rfqItems.length,
+
+      quotationCurrency,
+      baseCurrency,
+      exchangeRate,
+
+      totalAmount,
+      tax,
+      shippingCost,
+      grandTotalAmount,
+
+      baseTotalAmount,
+      baseTaxAmount,
+      baseShippingAmount,
+      baseGrandTotalAmount,
+
+      paymentTerms,
+      creditPeriod,
+      deliveryDate,
+      attachments,
+
+      isPartial:
+        processedItems.length <
+        rfqItems.length,
+
       status: "SUBMITTED",
       submittedAt: new Date(),
-      createdBy: user?.userId,
+
+      items: [],
+      isSelected: false,
     });
+
+    const createdItems =
+      await QuotationItem.insertMany(
+        processedItems.map(
+          (item: any) => ({
+            ...item,
+            quotationId:
+              quotation._id,
+          })
+        )
+      );
+
+    quotation.items = createdItems.map(
+      (item: any) => item._id
+    );
+
+    await quotation.save();
 
     return sendResponse({
       res,
       statusCode: 201,
-      message: "Quotation submitted successfully",
+      message:
+        "Quotation submitted successfully",
       data: quotation,
     });
   } catch (err) {

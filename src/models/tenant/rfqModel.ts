@@ -10,6 +10,7 @@ export interface IRFQ {
   status:
     | "DRAFT"
     | "SENT"
+    | "PO_CREATED"
     | "QUOTATION_RECEIVED"
     | "EVALUATION"
     | "PARTIALLY_AWARDED"
@@ -70,6 +71,7 @@ export const RFQSchema = new Schema<IRFQ>(
       enum: [
         "DRAFT",
         "SENT",
+        "PO_CREATED",
         "QUOTATION_RECEIVED",
         "EVALUATION",
         "PARTIALLY_AWARDED",

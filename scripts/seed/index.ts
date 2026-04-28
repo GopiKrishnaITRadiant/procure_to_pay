@@ -13,9 +13,9 @@ async function runSeeds() {
   try {
     await mongoose.connect(process.env.MONGODB_URI!);
 
-    // await seedSuperAdmin();
-    // await seedPlans();
-    // await seedIntegrations()
+    await seedSuperAdmin();
+    await seedPlans();
+    await seedIntegrations()
     await seedUOMMaster();
     await seedCurrency();
 
