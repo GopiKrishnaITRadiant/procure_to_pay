@@ -23,7 +23,7 @@ import { TenantExchangeRateSchema } from "../models/tenant/tenantExchangeRateMod
 import { TenantUOMSchema } from "../models/tenant/tenantUomModel";
 import { TenantUOMMappingSchema } from "../models/tenant/tenantUomMappingModel";
 import { QuotationItemSchema } from "../models/vendor/quotationItemModel";
-import { GoodsReceiptSchema } from "../models/tenant/goodsRecieptModel";
+import { GoodsReceiptSchema } from "../models/tenant/goodsReceiptModel";
 import { InvoiceSchema } from "../models/vendor/invoiceModel";
 
 export const schemas = {
@@ -53,5 +53,5 @@ export const schemas = {
   TenantUOM:TenantUOMSchema,
   TenantUOMMapping:TenantUOMMappingSchema,
   GoodsReceipt:GoodsReceiptSchema,
-  TenantInvoice:InvoiceSchema
+  VendorInvoice:InvoiceSchema,
 };

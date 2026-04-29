@@ -31,7 +31,7 @@ import uomConversionRoutes from "./uomConverstionRoutes"
 import currencyRoutes from "./currencyRoutes"
 import exchangeRateRoutes from "./exchangeRateRoutes"
 import tenantExchangeRoutes from "./tenant/tenantExchangeRoutes"
-import goodsRecieptRoutes from "./tenant/goodsRecieptRoutes"
+import goodsRecieptRoutes from "./tenant/goodsReceiptRoutes"
 import venodorInvoiceRoutes from "./vendor/invoiceRoutes"
 
 const router = Router();
@@ -76,7 +76,7 @@ apiRouter.use("/tenant-rfq",rfqRoutes)
 apiRouter.use("/vendor-quotation",quotationRoutes)
 apiRouter.use("/tenant/purchase-order",purchaseOrderRoutes)
 apiRouter.use("/tenant-exchange-rates",tenantExchangeRoutes)
-apiRouter.use("/tenant-goods-reciept",goodsRecieptRoutes)
+apiRouter.use("/tenant-goods-receipt",goodsRecieptRoutes)
 apiRouter.use("/tenant-vendor-invoice",venodorInvoiceRoutes)
 
 //Versioning

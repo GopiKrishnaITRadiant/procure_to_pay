@@ -49,7 +49,7 @@ export async function createDirectPurchaseOrder(
     const PurchaseOrder = tenantConnection.model("PurchaseOrder");
     const Vendor = tenantConnection.model("Vendor");
     const Material = tenantConnection.model("Material");
-    const AuditLog = tenantConnection.model("AuditLog");
+    // const AuditLog = tenantConnection.model("AuditLog");
 
     // ---------------------------------------------------
     // Vendor Validation
@@ -221,13 +221,13 @@ export async function createDirectPurchaseOrder(
     // ---------------------------------------------------
     // Audit Log
     // ---------------------------------------------------
-    await AuditLog.create({
-      module: "PURCHASE_ORDER",
-      documentId: po._id,
-      action: "CREATE_DIRECT_PO",
-      remarks: `Direct PO ${purchaseOrderNumber} created for internal vendor`,
-      performedBy: user?.userId,
-    });
+    // await AuditLog.create({
+    //   module: "PURCHASE_ORDER",
+    //   documentId: po._id,
+    //   action: "CREATE_DIRECT_PO",
+    //   remarks: `Direct PO ${purchaseOrderNumber} created for internal vendor`,
+    //   performedBy: user?.userId,
+    // });
 
     return sendResponse({
       res,

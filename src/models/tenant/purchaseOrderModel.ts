@@ -70,6 +70,15 @@ export interface IPurchaseOrder {
     | "CREATED"
     | "SENT"
     | "ACKNOWLEDGED"
+    | "REJECTED"
+    | "OPEN"
+    | "INVOICED"
+    | "PARTIALLY_INVOICED"
+    | "CLOSED"
+    | "PARTIALLY_CLOSED"
+    | "DELIVERED"
+    | "PARTIALLY_DELIVERED"
+    | "APPROVED"
     | "PARTIALLY_RECEIVED"
     | "RECEIVED"
     | "COMPLETED"
@@ -187,6 +196,15 @@ export const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
         "CREATED",
         "SENT",
         "ACKNOWLEDGED",
+        "REJECTED",
+        "OPEN",
+        "INVOICED",
+        "PARTIALLY_INVOICED",
+        "CLOSED",
+        "PARTIALLY_CLOSED",
+        "DELIVERED",
+        "PARTIALLY_DELIVERED",
+        "APPROVED",
         "PARTIALLY_RECEIVED",
         "RECEIVED",
         "COMPLETED",

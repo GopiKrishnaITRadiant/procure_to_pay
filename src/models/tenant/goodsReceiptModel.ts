@@ -1,5 +1,10 @@
 import { Schema, Types, InferSchemaType } from "mongoose";
 
+// CREATED     = Draft / awaiting approval
+// FULL        = Fully accepted
+// PARTIAL     = Some accepted some rejected / balance pending
+// REJECTED    = Entire GRN rejected after inspection
+// CANCELLED   = User/admin voided due to entry error
 export enum GoodsReceiptStatus {
   CREATED = "CREATED",
   PARTIAL = "PARTIAL",
