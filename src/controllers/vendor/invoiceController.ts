@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import mongoose from "mongoose";
+import mongoose, { connection } from "mongoose";
 import { ApiError } from "../../utils/apiErrors";
 import { sendResponse } from "../../utils/sendResponse";
 import { IPurchaseOrder } from "../../models/tenant/purchaseOrderModel";
@@ -431,6 +431,168 @@ export const getInvoiceDocumentById = async (
       res,
       statusCode: 200,
       message: "Invoice fetched successfully",
+      data: invoice,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const invoiceAndGoodsAndPurchaseOrderMatch = async (
+  connection: any,
+  invoiceId: any,
+) => {
+  const Invoice = connection.model("VendorInvoice");
+  const GoodsReceipt = connection.model("GoodsReceipt");
+  const PurchaseOrder = connection.model("PurchaseOrder");
+
+  const invoice: any = await Invoice.findById(invoiceId).lean();
+
+  if (!invoice) {
+    throw new ApiError(404, "Invoice not found");
+  }
+
+  const po: any = await PurchaseOrder.findById(invoice.purchaseOrderId).lean();
+
+  if (!po) {
+    throw new ApiError(404, "Purchase order not found");
+  }
+
+  const grns: any[] = await GoodsReceipt.find({
+    _id: { $in: invoice.goodsReceiptIds || [] },
+    status: { $in: ["PARTIAL", "FULL"] },
+  }).lean();
+
+  /* ------------------------------------------------------ */
+  /* Build GRN received map                                 */
+  /* ------------------------------------------------------ */
+
+  const receivedMap = new Map<string, number>();
+
+  for (const grn of grns) {
+    for (const item of grn.items || []) {
+      const key = String(item.purchaseOrderItemId);
+
+      receivedMap.set(
+        key,
+        (receivedMap.get(key) || 0) +
+          Number(item.acceptedQuantity || 0),
+      );
+    }
+  }
+
+  /* ------------------------------------------------------ */
+  /* Matching Logic                                         */
+  /* ------------------------------------------------------ */
+
+  let anyMismatch = false;
+
+  const updatedItems = invoice.items.map((invItem: any) => {
+    const poItem = po.items.find(
+      (x: any) =>
+        String(x._id) ===
+        String(invItem.purchaseOrderItemId),
+    );
+
+    if (!poItem) return invItem;
+
+    const receivedQty = Number(
+      receivedMap.get(String(poItem._id)) || 0,
+    );
+
+    const poPrice = Number(poItem.netPrice || 0);
+
+    const reasons: string[] = [];
+
+    /* Quantity Check */
+    if (invItem.invoicedQuantity > receivedQty) {
+      reasons.push("Quantity mismatch");
+    }
+
+    /* Price Check */
+    if (invItem.invoiceUnitPrice !== poPrice) {
+      reasons.push("Price mismatch");
+    }
+
+    let matchStatus = "MATCHED";
+
+    if (reasons.length > 0) {
+      anyMismatch = true;
+
+      if (reasons.length > 1) {
+        matchStatus = "MULTIPLE_MISMATCH";
+      } else if (reasons[0] === "Price mismatch") {
+        matchStatus = "PRICE_MISMATCH";
+      } else {
+        matchStatus = "QUANTITY_MISMATCH";
+      }
+    }
+
+    return {
+      ...invItem,
+      matchStatus,
+      mismatchReason: reasons.join(", ") || null,
+    };
+  });
+
+  return {
+    items: updatedItems,
+    headerMatchStatus: anyMismatch
+      ? "MULTIPLE_MISMATCH"
+      : "MATCHED",
+    anyMismatch,
+  };
+};
+
+export const approveInvoice = async (req:Request, res:Response, next:NextFunction) => {
+  try {
+    if (!req.tenantConnection) {
+      throw new ApiError(500, "Tenant connection not found");
+    }
+
+    const { invoiceId } = req.params;
+    const user: any = req.user;
+
+    const Invoice = req.tenantConnection.model("VendorInvoice");
+
+    const invoice: any = await Invoice.findById(invoiceId);
+
+    if (!invoice) {
+      throw new ApiError(404, "Invoice not found");
+    }
+
+    if (invoice.status === "APPROVED") {
+      throw new ApiError(400, "Already approved");
+    }
+
+    /* ------------------------------------------------ */
+    /* RUN MATCHING ENGINE HERE                         */
+    /* ------------------------------------------------ */
+
+    const result =
+      await invoiceAndGoodsAndPurchaseOrderMatch(
+        req.tenantConnection,
+        invoiceId,
+      );
+    console.log('result',result)
+
+    invoice.items = result.items;
+    invoice.matchStatus = result.headerMatchStatus;
+
+    if (result.anyMismatch) {
+      invoice.status = "MISMATCH";
+    } else {
+      invoice.status = "APPROVED";
+      invoice.approvedAt = new Date();
+      invoice.approvedBy = user._id;
+    }
+
+    // await invoice.save();
+
+    return sendResponse({
+      res,
+      statusCode: 200,
+      message: "Invoice processed successfully",
       data: invoice,
     });
   } catch (error) {

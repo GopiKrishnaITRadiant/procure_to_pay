@@ -125,7 +125,6 @@ export const submitQuotation = async (
       throw new ApiError(400, "RFQ submission deadline passed");
     }
 
-    // ---------------- Vendor Validation ----------------
     const vendor = await Vendor.findById(user?.vendorId);
 
     if (!vendor) {
@@ -151,7 +150,6 @@ export const submitQuotation = async (
       );
     }
 
-    // ---------------- Duplicate Check ----------------
     const existingQuotation = await Quotation.findOne({
       rfqId,
       vendorId: user?.vendorId,
@@ -297,14 +295,13 @@ export const submitQuotation = async (
       })
     );
 
-    // ---------------- Totals ----------------
     tax = Number(tax) || 0;
     shippingCost = Number(shippingCost) || 0;
 
     const totalAmount =
       processedItems.reduce(
         (sum: number, item: any) =>
-          sum + item.totalPrice,
+          sum + item.convertedLineAmount,
         0
       );
 

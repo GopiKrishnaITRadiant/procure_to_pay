@@ -411,10 +411,6 @@ export const rejectGoodsReceipt = async (
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/*                             GET BY ID                                      */
-/* -------------------------------------------------------------------------- */
-
 export const getGoodsReceiptById = async (
   req: Request,
   res: Response,
@@ -427,7 +423,7 @@ export const getGoodsReceiptById = async (
 
     const GoodsReceipt = req.tenantConnection.model("GoodsReceipt");
 
-    const { id } = req.params;
+    const { goodsReceiptId:id } = req.params;
 
     const data = await GoodsReceipt.findById(id)
       .populate("vendorId", "name email")
@@ -448,7 +444,7 @@ export const getGoodsReceiptById = async (
   }
 };
 
-//SEND GOODS RECEIPT MAIL
+//SEND GOODS RECEIPT MAIL (Optional)
 export const sendGoodsReciept = async (
   req: Request,
   res: Response,
@@ -499,45 +495,6 @@ export const sendGoodsReciept = async (
       res,
       statusCode: 200,
       message: "Goods receipt sent successfully",
-      data: grn,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getGoodsRecieptById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    if (!req.tenantConnection) {
-      throw new ApiError(500, "Tenant connection not found");
-    }
-
-    const { id } = req.params;
-
-    if (!Types.ObjectId.isValid(id as string)) {
-      throw new ApiError(400, "Invalid id");
-    }
-
-    const GoodsReceiptModel = req.tenantConnection.model("GoodsReceipt");
-
-    const grn = await GoodsReceiptModel.findById(id)
-      .populate("purchaseOrderId", "purchaseOrderNumber status")
-      .populate("vendorId", "name email phone")
-      .populate("createdBy", "name email")
-      .lean();
-
-    if (!grn) {
-      throw new ApiError(404, "GRN not found");
-    }
-
-    sendResponse({
-      res,
-      statusCode: 200,
-      message: "GRN found successfully",
       data: grn,
     });
   } catch (error) {

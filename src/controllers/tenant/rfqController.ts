@@ -411,11 +411,12 @@ export const awardRFQ = async (
     ];
 
     const quotations = await Quotation.find({
-      _id: { $in: quotationIds },
+      // _id: { $in: quotationIds },
       rfqId,
       status: {
         $in: ["SUBMITTED", "REVISED","AWARDED","PARTIALLY_AWARDED"],
       },
+      items: { $in: quotationIds },
     });
 
     if (quotations.length !== quotationIds.length) {

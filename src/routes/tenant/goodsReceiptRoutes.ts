@@ -9,6 +9,6 @@ router.post("/", createGoodsReceipt);
 router.post("/approve/:goodsReceiptId",approveGoodsReceipt)
 router.post("/reject/:goodsReceiptId",rejectGoodsReceipt)
 router.get("/",  sendGoodsReciept);
-router.get("/:id", getGoodsReceiptById);
+router.get("/:goodsReceiptId", getGoodsReceiptById);
 
 export default router;
