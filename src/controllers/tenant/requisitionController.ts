@@ -67,7 +67,7 @@ export const createRequisition = async (
     );
 
     const processedItems = items.map((item: any, index: number) => {
-      const itemNumber = ((index + 1) * 10).toString(); // SAP style
+      const itemNumber = String((index + 1) * 10).padStart(4, "0") // SAP style
 
       let materialData = null;
       let isMaterialCatalog = false;
@@ -296,7 +296,7 @@ export const updateRequisition = async (
     const newItems = items
       .filter((i: any) => !i._id)
       .map((item: any, index: number) => {
-        const itemNumber = (maxItemNumber + (index + 1) * 10).toString();
+        const itemNumber = String(maxItemNumber + (index + 1) * 10).padStart(4, "0") //SAP Style
 
         let materialData = null;
         let isMaterialCatalog = false;

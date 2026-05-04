@@ -1,15 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../utils/apiErrors";
 import { sendResponse } from "../../utils/sendResponse";
-import { Types } from "mongoose";
 import { generateGRNCode } from "../../utils/codeGenerator";
 import { GoodsReceiptStatus } from "../../models/tenant/goodsReceiptModel";
-import mongoose from "mongoose";
-/**
- * Creates GRN in CREATED status
- * No PO quantity update yet
- * Approval required later
- */
 
 export const createGoodsReceipt = async (
   req: Request,
@@ -258,9 +251,7 @@ export const approveGoodsReceipt = async (
     const user = req.user as any;
 
     const GoodsReceipt = req.tenantConnection.model("GoodsReceipt");
-
     const PurchaseOrder = req.tenantConnection.model("PurchaseOrder");
-
     // const AuditLog = req.tenantConnection.model("AuditLog");
 
     const { goodsReceiptId:id } = req.params;

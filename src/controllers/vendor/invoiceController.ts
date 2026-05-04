@@ -24,6 +24,7 @@ export const createInvoice = async (
   res: Response,
   next: NextFunction,
 ) => {
+  // const session = await req.tenantConnection?.startSession();
   try {
     if (!req.tenantConnection) {
       throw new ApiError(500, "Tenant connection not found");
@@ -43,42 +44,34 @@ export const createInvoice = async (
       items,
     } = req.body;
 
-    if (!purchaseOrderId) {
+    if (!purchaseOrderId)
       throw new ApiError(400, "Purchase Order ID is required");
-    }
-
-    if (!vendorInvoiceNumber) {
+    if (!vendorInvoiceNumber)
       throw new ApiError(400, "Vendor invoice number is required");
-    }
-
-    if (!dueDate) {
-      throw new ApiError(400, "Due date is required");
-    }
-
+    if (!dueDate) throw new ApiError(400, "Due date is required");
     if (!Array.isArray(items) || items.length === 0) {
       throw new ApiError(400, "Invoice items are required");
     }
 
     const PurchaseOrder = req.tenantConnection.model("PurchaseOrder");
-
     const GoodsReceipt = req.tenantConnection.model("GoodsReceipt");
-
     const Invoice = req.tenantConnection.model("VendorInvoice");
+    // const AuditLog = req.tenantConnection.model("AuditLog");
+    // session.startTransaction();
 
-    /* ---------------------------------------------------------- */
-    /* LOAD PO                                                    */
-    /* ---------------------------------------------------------- */
+    const po: any = await PurchaseOrder.findById(purchaseOrderId)
+      // .session(session)
+      .lean();
 
-    const po: any = await PurchaseOrder.findById(purchaseOrderId).lean();
+    if (!po) throw new ApiError(404, "Purchase Order not found");
 
-    if (!po) {
-      throw new ApiError(404, "Purchase Order not found");
+    if (user?.userType === "VENDOR") {
+      if (String(user.vendorId) !== String(po.vendorId)) {
+        throw new ApiError(403, "Vendor not authorized for this PO");
+      }
     }
 
-    /* ---------------------------------------------------------- */
-    /* DUPLICATE SUPPLIER INVOICE CHECK                           */
-    /* ---------------------------------------------------------- */
-
+    //DUPLICATE INVOICE CHECK
     const normalizedVendorInvoiceNumber = vendorInvoiceNumber
       .trim()
       .toUpperCase();
@@ -87,44 +80,35 @@ export const createInvoice = async (
       tenantId: po.tenantId,
       vendorId: po.vendorId,
       vendorInvoiceNumber: normalizedVendorInvoiceNumber,
-      status: {
-        $nin: ["REJECTED", "CANCELLED"],
-      },
-    });
+      status: { $nin: ["REJECTED", "CANCELLED"] },
+    })
+    // .session(session);
 
     if (duplicate) {
       throw new ApiError(400, "Vendor invoice number already exists");
     }
 
-    /* ---------------------------------------------------------- */
-    /* AUTO FETCH APPROVED / RECEIVABLE GRNS                      */
-    /* ---------------------------------------------------------- */
-
+    //Find GRNs for this PO
     const selectedGRNs: any[] = await GoodsReceipt.find({
       purchaseOrderId: po._id,
       vendorId: po.vendorId,
-      status: {
-        $in: ["PARTIAL", "FULL"],
-      },
-    }).lean();
-
-    /* ---------------------------------------------------------- */
-    /* PREVIOUS INVOICES                                          */
-    /* ---------------------------------------------------------- */
+      status: { $in: ["PARTIAL", "FULL", "APPROVED"] },
+    })
+      // .session(session)
+      .lean();
 
     const previousInvoices: any[] = await Invoice.find({
       purchaseOrderId: po._id,
-      status: {
-        $nin: ["REJECTED", "CANCELLED"],
-      },
-    }).lean();
+      status: { $nin: ["REJECTED", "CANCELLED"] },
+    })
+      // .session(session)
+      .lean();
 
     const alreadyInvoicedMap = new Map<string, number>();
 
     for (const inv of previousInvoices) {
       for (const row of inv.items || []) {
         const key = String(row.purchaseOrderItemId);
-
         alreadyInvoicedMap.set(
           key,
           (alreadyInvoicedMap.get(key) || 0) +
@@ -133,16 +117,12 @@ export const createInvoice = async (
       }
     }
 
-    /* ---------------------------------------------------------- */
-    /* RECEIVED QTY FROM GRNS                                     */
-    /* ---------------------------------------------------------- */
-
+    //RECEIVED QTY FROM GRN
     const receivedMap = new Map<string, number>();
 
     for (const grn of selectedGRNs) {
       for (const row of grn.items || []) {
         const key = String(row.purchaseOrderItemId);
-
         receivedMap.set(
           key,
           (receivedMap.get(key) || 0) + Number(row.acceptedQuantity || 0),
@@ -150,9 +130,9 @@ export const createInvoice = async (
       }
     }
 
-    /* ---------------------------------------------------------- */
-    /* VALIDATE ITEMS + CALCULATE                                 */
-    /* ---------------------------------------------------------- */
+    //VALIDATION + CALCULATION
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const PRICE_TOLERANCE = 0.01;
 
     const finalItems: any[] = [];
 
@@ -167,136 +147,92 @@ export const createInvoice = async (
           String(x.itemNumber) === String(reqItem.itemNumber),
       );
 
-      if (!poItem) {
-        throw new ApiError(400, "PO item not found");
-      }
+      if (!poItem) throw new ApiError(400, "PO item not found");
 
       const poItemId = String(poItem._id);
 
-      const orderedQuantity = Number(poItem.quantity || 0);
+      const orderedQty = Number(poItem.quantity || 0);
+      const receivedQty = Number(receivedMap.get(poItemId) || 0);
+      const prevInvoicedQty = Number(alreadyInvoicedMap.get(poItemId) || 0);
 
-      const receivedQuantity = Number(receivedMap.get(poItemId) || 0);
+      const availableQty = receivedQty - prevInvoicedQty;
 
-      const previouslyInvoicedQuantity = Number(
-        alreadyInvoicedMap.get(poItemId) || 0,
-      );
+      const invoicedQty = Number(reqItem.invoicedQuantity || 0);
 
-      const availableQty = receivedQuantity - previouslyInvoicedQuantity;
-
-      const invoicedQuantity = Number(reqItem.invoicedQuantity || 0);
-
-      if (invoicedQuantity <= 0) {
+      if (invoicedQty <= 0) {
         throw new ApiError(
           400,
-          `Invalid invoice quantity for item ${poItem.itemNumber}`,
+          `Invalid quantity for item ${poItem.itemNumber}`,
         );
       }
 
-      if (invoicedQuantity > availableQty) {
+      if (invoicedQty > availableQty) {
         throw new ApiError(
           400,
           `Over invoicing not allowed for item ${poItem.itemNumber}`,
         );
       }
 
-      const pendingInvoiceQuantity = availableQty - invoicedQuantity;
-
       const poPrice = Number(poItem.netPrice || 0);
-
-      const invoiceUnitPrice = Number(reqItem.invoiceUnitPrice ?? poPrice);
+      const invoicePrice = Number(reqItem.invoiceUnitPrice ?? poPrice);
 
       const taxRate = Number(reqItem.taxRate || 0);
 
-      const lineSubTotal = invoicedQuantity * invoiceUnitPrice;
+      const lineSubTotal = round(invoicedQty * invoicePrice);
+      const lineTax = round((lineSubTotal * taxRate) / 100);
+      const lineTotal = round(lineSubTotal + lineTax);
 
-      const lineTaxAmount = (lineSubTotal * taxRate) / 100;
+      subtotal = round(subtotal + lineSubTotal);
+      taxAmount = round(taxAmount + lineTax);
 
-      const lineGrandTotal = lineSubTotal + lineTaxAmount;
-
-      subtotal += lineSubTotal;
-
-      taxAmount += lineTaxAmount;
-
+      //MATCH LOGIC 
       let matchStatus = "MATCHED";
-
       const reasons: string[] = [];
 
-      if (invoiceUnitPrice !== poPrice) {
+      if (Math.abs(invoicePrice - poPrice) > PRICE_TOLERANCE) {
         reasons.push("Price mismatch");
-      }
-
-      if (invoicedQuantity > availableQty) {
-        reasons.push("Quantity mismatch");
       }
 
       if (reasons.length) {
         anyMismatch = true;
-
-        if (reasons.length > 1) {
-          matchStatus = "MULTIPLE_MISMATCH";
-        } else if (reasons[0] === "Price mismatch") {
-          matchStatus = "PRICE_MISMATCH";
-        } else {
-          matchStatus = "QUANTITY_MISMATCH";
-        }
+        matchStatus =
+          reasons.length > 1 ? "MULTIPLE_MISMATCH" : "PRICE_MISMATCH";
       }
 
       finalItems.push({
         purchaseOrderItemId: poItem._id,
-
         itemNumber: poItem.itemNumber,
 
-        material: poItem.material || null,
+        description: poItem.description,
 
-        description: poItem.description || null,
+        orderedQuantity: orderedQty,
+        receivedQuantity: receivedQty,
+        previouslyInvoicedQuantity: prevInvoicedQty,
 
-        orderedQuantity,
-        receivedQuantity,
-        previouslyInvoicedQuantity,
-        invoicedQuantity,
-        pendingInvoiceQuantity,
+        invoicedQuantity: invoicedQty,
+        pendingInvoiceQuantity: availableQty - invoicedQty,
 
         unitOfMeasure: poItem.unitOfMeasure,
 
         purchaseOrderUnitPrice: poPrice,
-
-        invoiceUnitPrice,
+        invoiceUnitPrice: invoicePrice,
 
         lineSubTotal,
-
         taxRate,
-
-        taxAmount: lineTaxAmount,
-
-        lineGrandTotal,
+        taxAmount: lineTax,
+        lineGrandTotal: lineTotal,
 
         matchStatus,
-
         mismatchReason: reasons.join(", ") || null,
 
-        remarks: reqItem.remarks || null,
-
         rfqId: poItem.rfqId || null,
-
         rfqItemId: poItem.rfqItemId || null,
-
         quotationId: poItem.quotationId || null,
-
-        requisitionId: poItem.requisitionId || null,
-
-        contractId: poItem.contractId || null,
-
-        externalId: poItem.externalId || null,
       });
     }
 
-    /* ---------------------------------------------------------- */
-    /* HEADER TOTALS                                              */
-    /* ---------------------------------------------------------- */
-
-    const grandTotal = subtotal + taxAmount;
-
-    const dueAmount = grandTotal;
+    //TOTALS
+    const grandTotal = round(subtotal + taxAmount);
 
     const invoiceNumber = await generateInvoiceCode(req.tenantConnection);
 
@@ -304,82 +240,69 @@ export const createInvoice = async (
 
     const status = anyMismatch ? "PENDING_MATCH" : "MATCHED";
 
-    /* ---------------------------------------------------------- */
-    /* SOURCE                                                     */
-    /* ---------------------------------------------------------- */
-
     const source = user?.userType === "VENDOR" ? "PORTAL" : "MANUAL";
 
-    /* ---------------------------------------------------------- */
-    /* CREATE                                                     */
-    /* ---------------------------------------------------------- */
+    //CREATE INVOICE
+    const invoice = await Invoice.create(
+      [
+        {
+          tenantId: po.tenantId,
+          vendorInvoiceNumber: normalizedVendorInvoiceNumber,
+          invoiceNumber,
 
-    const invoice = await Invoice.create({
-      tenantId: po.tenantId,
+          purchaseOrderId: po._id,
+          purchaseOrderNumber: po.purchaseOrderNumber,
 
-      vendorInvoiceNumber: normalizedVendorInvoiceNumber,
+          goodsReceiptIds: selectedGRNs.map((g) => g._id),
 
-      invoiceNumber,
+          vendorId: po.vendorId,
+          supplierName: po.supplierName,
 
-      purchaseOrderId: po._id,
+          items: finalItems,
 
-      purchaseOrderNumber: po.purchaseOrderNumber,
+          subtotal,
+          taxAmount,
+          grandTotal,
 
-      goodsReceiptIds: selectedGRNs.map((x: any) => x._id),
+          paidAmount: 0,
+          dueAmount: grandTotal,
 
-      vendorId: po.vendorId,
+          currency: po.currency,
+          exchangeRate: po.exchangeRate || 1,
 
-      supplierName: po.supplierName,
+          invoiceDate: invoiceDate || new Date(),
+          postingDate: postingDate || new Date(),
+          dueDate,
 
-      companyCode: po.companyCode,
+          paymentTerms: paymentTerms || po.paymentTerms,
 
-      purchasingOrganization: po.purchasingOrganization,
+          remarks,
+          attachments,
 
-      purchasingGroup: po.purchasingGroup,
+          status,
+          matchStatus: headerMatchStatus,
 
-      items: finalItems,
+          source,
+          syncStatus: "PENDING",
 
-      subtotal,
-      taxAmount,
-      grandTotal,
+          createdBy: user?._id,
+        },
+      ],
+      // { session },
+    );
 
-      paidAmount: 0,
-      dueAmount,
-
-      currency: po.currency,
-
-      exchangeRate: po.exchangeRate || 1,
-
-      invoiceDate: invoiceDate || new Date(),
-
-      postingDate: postingDate || new Date(),
-
-      dueDate,
-
-      paymentTerms: paymentTerms || po.paymentTerms,
-
-      remarks: remarks || null,
-
-      attachments,
-
-      status,
-
-      matchStatus: headerMatchStatus,
-
-      source,
-
-      syncStatus: "PENDING",
-
-      createdBy: user?._id,
-    });
+    // await session.commitTransaction();
+    // session.endSession();
 
     return sendResponse({
       res,
       statusCode: 201,
       message: "Invoice created successfully",
-      data: invoice,
+      data: invoice[0],
     });
   } catch (error) {
+    //   await session.abortTransaction();
+    //   session.endSession();
     next(error);
   }
 };
@@ -394,7 +317,7 @@ export const getInvoiceDocumentById = async (
       throw new ApiError(500, "Tenant connection not found");
     }
 
-    const { invoiceId:id } = req.params;
+    const { invoiceId: id } = req.params;
 
     if (!id) {
       throw new ApiError(400, "Invoice ID is required");
@@ -404,7 +327,7 @@ export const getInvoiceDocumentById = async (
 
     const Invoice = req.tenantConnection.model("VendorInvoice");
 
-    const invoice:any = await Invoice.findById(id)
+    const invoice: any = await Invoice.findById(id)
       .populate("purchaseOrderId", "purchaseOrderNumber status")
       .populate("vendorId", "name code")
       .lean();
@@ -475,8 +398,7 @@ export const invoiceAndGoodsAndPurchaseOrderMatch = async (
 
       receivedMap.set(
         key,
-        (receivedMap.get(key) || 0) +
-          Number(item.acceptedQuantity || 0),
+        (receivedMap.get(key) || 0) + Number(item.acceptedQuantity || 0),
       );
     }
   }
@@ -489,16 +411,12 @@ export const invoiceAndGoodsAndPurchaseOrderMatch = async (
 
   const updatedItems = invoice.items.map((invItem: any) => {
     const poItem = po.items.find(
-      (x: any) =>
-        String(x._id) ===
-        String(invItem.purchaseOrderItemId),
+      (x: any) => String(x._id) === String(invItem.purchaseOrderItemId),
     );
 
     if (!poItem) return invItem;
 
-    const receivedQty = Number(
-      receivedMap.get(String(poItem._id)) || 0,
-    );
+    const receivedQty = Number(receivedMap.get(String(poItem._id)) || 0);
 
     const poPrice = Number(poItem.netPrice || 0);
 
@@ -537,14 +455,16 @@ export const invoiceAndGoodsAndPurchaseOrderMatch = async (
 
   return {
     items: updatedItems,
-    headerMatchStatus: anyMismatch
-      ? "MULTIPLE_MISMATCH"
-      : "MATCHED",
+    headerMatchStatus: anyMismatch ? "MULTIPLE_MISMATCH" : "MATCHED",
     anyMismatch,
   };
 };
 
-export const approveInvoice = async (req:Request, res:Response, next:NextFunction) => {
+export const approveInvoice = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     if (!req.tenantConnection) {
       throw new ApiError(500, "Tenant connection not found");
@@ -569,12 +489,10 @@ export const approveInvoice = async (req:Request, res:Response, next:NextFunctio
     /* RUN MATCHING ENGINE HERE                         */
     /* ------------------------------------------------ */
 
-    const result =
-      await invoiceAndGoodsAndPurchaseOrderMatch(
-        req.tenantConnection,
-        invoiceId,
-      );
-    console.log('result',result)
+    const result = await invoiceAndGoodsAndPurchaseOrderMatch(
+      req.tenantConnection,
+      invoiceId,
+    );
 
     invoice.items = result.items;
     invoice.matchStatus = result.headerMatchStatus;
@@ -587,7 +505,7 @@ export const approveInvoice = async (req:Request, res:Response, next:NextFunctio
       invoice.approvedBy = user._id;
     }
 
-    // await invoice.save();
+    await invoice.save();
 
     return sendResponse({
       res,

@@ -164,7 +164,7 @@ export const getRFQComparison = async (
     const quotations = await Quotation.find({
       rfqId,
       status: {
-        $in: ["SUBMITTED", "REVISED"],
+        $in: ["SUBMITTED", "REVISED","AWARDED",'PARTIALLY_AWARDED'],
       },
     }).lean();
 
@@ -419,12 +419,12 @@ export const awardRFQ = async (
       items: { $in: quotationIds },
     });
 
-    if (quotations.length !== quotationIds.length) {
-      throw new ApiError(
-        400,
-        "Invalid quotation(s) provided",
-      );
-    }
+    // if (quotations.length !== quotationIds.length) {
+    //   throw new ApiError(
+    //     400,
+    //     "Invalid quotation(s) provided",
+    //   );
+    // }
 
     for (const award of awards) {
       const quotationItem =

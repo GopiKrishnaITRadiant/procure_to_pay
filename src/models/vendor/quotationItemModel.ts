@@ -2,6 +2,7 @@ import { Types, Schema } from "mongoose";
 
 export interface IQuotationItem {
   _id: Types.ObjectId;
+  rfqId: Types.ObjectId;
   rfqItemId: Types.ObjectId;
   quotationId: Types.ObjectId;
 
@@ -31,6 +32,11 @@ export const QuotationItemSchema = new Schema<IQuotationItem>(
     quotationId: {
       type: Types.ObjectId,
       required: true,
+    },
+    rfqId: {
+      type: Types.ObjectId,
+      required: true,
+      index: true,
     },
     rfqItemId: {
       type: Types.ObjectId,

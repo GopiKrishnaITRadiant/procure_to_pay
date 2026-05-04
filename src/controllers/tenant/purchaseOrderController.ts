@@ -29,9 +29,7 @@ export async function createDirectPurchaseOrder(
       deliveryAddress,
     } = body;
 
-    // ---------------------------------------------------
     // Header Validations
-    // ---------------------------------------------------
     if (!vendorId) {
       throw new ApiError(400, "vendorId is required");
     }
@@ -51,9 +49,7 @@ export async function createDirectPurchaseOrder(
     const Material = tenantConnection.model("Material");
     // const AuditLog = tenantConnection.model("AuditLog");
 
-    // ---------------------------------------------------
     // Vendor Validation
-    // ---------------------------------------------------
     const vendor = await Vendor.findOne({
       _id: vendorId,
       isActive: true,
@@ -64,9 +60,7 @@ export async function createDirectPurchaseOrder(
       throw new ApiError(400, "Valid active internal vendor not found");
     }
 
-    // ---------------------------------------------------
     // Load Materials
-    // ---------------------------------------------------
     const materialIds = items
       .filter((x: any) => x.materialId)
       .map((x: any) => x.materialId);
@@ -82,9 +76,7 @@ export async function createDirectPurchaseOrder(
       materials.map((m: any) => [m._id.toString(), m]),
     );
 
-    // ---------------------------------------------------
     // Build Items
-    // ---------------------------------------------------
     let totalMinor = 0;
 
     const poItems = items.map((item: any, index: number) => {
@@ -161,7 +153,7 @@ export async function createDirectPurchaseOrder(
       totalMinor += lineTotalMinor;
 
       return {
-        itemNumber: String(row * 10).padStart(5, "0"),
+        itemNumber: String(row * 10).padStart(4, "0"),
         materialId: materialId || null,
         materialCode: material?.materialCode || null,
         description,
@@ -179,14 +171,10 @@ export async function createDirectPurchaseOrder(
       };
     });
 
-    // ---------------------------------------------------
     // Generate PO Number
-    // ---------------------------------------------------
     const purchaseOrderNumber = await generatePOCode(tenantConnection);
 
-    // ---------------------------------------------------
     // Create PO
-    // ---------------------------------------------------
     const poPayload = {
       tenantId: user?.tenantId,
       purchaseOrderNumber,
@@ -218,9 +206,7 @@ export async function createDirectPurchaseOrder(
 
     const po = await PurchaseOrder.create(poPayload);
 
-    // ---------------------------------------------------
     // Audit Log
-    // ---------------------------------------------------
     // await AuditLog.create({
     //   module: "PURCHASE_ORDER",
     //   documentId: po._id,
@@ -239,325 +225,6 @@ export async function createDirectPurchaseOrder(
     next(error);
   }
 }
-
-// export async function createRFQPurchaseOrder(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) {
-//   if(!req.tenantConnection) return res.status(500).json({ message: "Tenant connection not found" });
-
-//   const session = await req.tenantConnection.startSession();
-
-//   try {
-//     session.startTransaction();
-
-//     const { tenantConnection, user, params } = req;
-//     const { rfqId } = params;
-
-//     if (!tenantConnection) {
-//       throw new ApiError(500, "Tenant connection not found");
-//     }
-
-//     const RFQ = tenantConnection.model("RFQ");
-//     const Quotation = tenantConnection.model("Quotation");
-//     const QuotationItem = tenantConnection.model("QuotationItem");
-//     const PurchaseOrder = tenantConnection.model("PurchaseOrder");
-//     const Vendor = tenantConnection.model("Vendor");
-
-//     // 1. FETCH RFQ
-//     const rfq = await RFQ.findById(rfqId).session(session);
-
-//     if (!rfq) {
-//       throw new ApiError(404, "RFQ not found");
-//     }
-
-//     if (
-//       ![
-//         "AWARDED",
-//         "PARTIALLY_AWARDED",
-//         "AWARD_REVISED",
-//       ].includes(rfq.status)
-//     ) {
-//       throw new ApiError(
-//         400,
-//         "RFQ is not eligible for PO creation"
-//       );
-//     }
-
-//     // 2. FETCH AWARDED QUOTATIONS
-//     const quotations = await Quotation.find({
-//       rfqId,
-//       status: {
-//         $in: ["AWARDED", "PARTIALLY_AWARDED"],
-//       },
-//     }).session(session);
-
-//     if (!quotations.length) {
-//       throw new ApiError(
-//         400,
-//         "No awarded quotations found"
-//       );
-//     }
-
-//     const quotationIds = quotations.map(
-//       (quotation: any) => quotation._id
-//     );
-
-//     const quotationItems =
-//       await QuotationItem.find({
-//         quotationId: { $in: quotationIds },
-//         isAwarded: true,
-//       }).session(session);
-
-//     if (!quotationItems.length) {
-//       throw new ApiError(
-//         400,
-//         "No awarded quotation items found"
-//       );
-//     }
-
-//     // 3. GROUP BY VENDOR
-//     const quotationMap = new Map(
-//       quotations.map((quotation: any) => [
-//         quotation._id.toString(),
-//         quotation,
-//       ])
-//     );
-
-//     const vendorWiseMap = new Map<
-//       string,
-//       {
-//         quotation: any;
-//         items: any[];
-//       }
-//     >();
-
-//     for (const item of quotationItems) {
-//       const quotation = quotationMap.get(
-//         item.quotationId.toString()
-//       );
-
-//       if (!quotation) continue;
-
-//       const vendorId =
-//         quotation.vendorId.toString();
-
-//       if (!vendorWiseMap.has(vendorId)) {
-//         vendorWiseMap.set(vendorId, {
-//           quotation,
-//           items: [],
-//         });
-//       }
-
-//       vendorWiseMap.get(vendorId)?.items.push(
-//         item
-//       );
-//     }
-
-//     if (vendorWiseMap.size === 0) {
-//       throw new ApiError(
-//         400,
-//         "No vendor award data found"
-//       );
-//     }
-
-//     // 4. CREATE PO PER VENDOR
-//     const createdPOs: any[] = [];
-
-//     for (const [
-//       vendorId,
-//       vendorData,
-//     ] of vendorWiseMap.entries()) {
-//       const { quotation, items } = vendorData;
-
-//       // duplicate prevention
-//       const existingPO =
-//         await PurchaseOrder.findOne({
-//           rfqId,
-//           vendorId,
-//           status: {
-//             $ne: "CANCELLED",
-//           },
-//         }).session(session);
-
-//       if (existingPO) {
-//         continue;
-//       }
-
-//       const vendor =
-//         await Vendor.findById(vendorId).session(
-//           session
-//         );
-
-//       let lineNumber = 10;
-
-//       const poItems = items.map(
-//         (item: any) => {
-//           const lineAmount =
-//             Number(
-//               item.convertedQuantity
-//             ) *
-//             Number(
-//               item.convertedUnitPrice
-//             );
-
-//           const result = {
-//             itemNumber:
-//               String(lineNumber),
-//             description:
-//               item.description ||
-//               "RFQ Award Item",
-
-//             quantity: Number(
-//               item.convertedQuantity
-//             ),
-
-//             unitOfMeasure:
-//               item.rfqUnitOfMeasure,
-
-//             netPrice: Number(
-//               item.convertedUnitPrice
-//             ),
-
-//             currency:
-//               quotation.quotationCurrency,
-
-//             deliveryDate:
-//               item.deliveryDate ||
-//               quotation.deliveryDate,
-
-//             rfqId,
-//             rfqItemId:
-//               item.rfqItemId,
-
-//             quotationId:
-//               quotation._id,
-
-//             status: "OPEN",
-//           };
-
-//           lineNumber += 10;
-
-//           return result;
-//         }
-//       );
-
-//       const totalNetAmount =
-//         poItems.reduce(
-//           (
-//             sum: number,
-//             item: any
-//           ) =>
-//             sum +
-//             item.quantity *
-//               item.netPrice,
-//           0
-//         );
-
-//       const po =
-//         await PurchaseOrder.create(
-//           [
-//             {
-//               tenantId:
-//                 user?.tenantId,
-
-//               vendorId,
-
-//               supplierName:
-//                 vendor?.companyName ||
-//                 "",
-
-//               rfqId,
-
-//               purchaseOrderNumber:
-//                 await generatePOCode(
-//                   tenantConnection
-//                 ),
-
-//               purchaseOrderType:
-//                 "NB",
-
-//               companyCode:
-//                 rfq.companyCode ||
-//                 "DEFAULT",
-
-//               purchasingOrganization:
-//                 rfq.purchasingOrganization ||
-//                 "DEFAULT",
-
-//               purchasingGroup:
-//                 rfq.purchasingGroup,
-
-//               currency:
-//                 quotation.quotationCurrency,
-
-//               exchangeRate:
-//                 quotation.exchangeRate,
-
-//               paymentTerms:
-//                 quotation.paymentTerms,
-
-//               creationDate:
-//                 new Date(),
-
-//               purchaseOrderDate:
-//                 new Date(),
-
-//               totalNetAmount:
-//                 Number(
-//                   totalNetAmount.toFixed(
-//                     2
-//                   )
-//                 ),
-
-//               items: poItems,
-
-//               source: "RFQ",
-
-//               status:
-//                 "CREATED",
-
-//               syncStatus:
-//                 "PENDING",
-
-//               createdBy:
-//                 user?.userId,
-//             },
-//           ],
-//           { session }
-//         );
-
-//       createdPOs.push(po[0]);
-//     }
-
-//     if (!createdPOs.length) {
-//       throw new ApiError(
-//         400,
-//         "PO already exists for awarded vendors"
-//       );
-//     }
-
-//     // 5. UPDATE RFQ STATUS
-//     rfq.status = "PO_CREATED";
-//     await rfq.save({ session });
-
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     return sendResponse({
-//       res,
-//       statusCode: 201,
-//       message:
-//         "Purchase Order(s) created successfully",
-//       data: createdPOs,
-//     });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     next(error);
-//   }
-// }
 
 export async function createRFQPurchaseOrder(
   req: Request,
@@ -656,14 +323,13 @@ export async function createRFQPurchaseOrder(
 
       const vendor = await Vendor.findById(vendorId);
 
-      let lineNumber = 10;
-
-      const poItems = items.map((item: any) => {
+      const poItems = items.map((item: any,index:number) => {
         const netPrice = Number(item.convertedUnitPrice);
         const quantity = Number(item.convertedQuantity);
+        const row = index + 1;
 
         return {
-          itemNumber: String(lineNumber++),
+          itemNumber: String(row * 10).padStart(4, "0"),
           description: item.description || "RFQ Award Item",
           quantity,
           unitOfMeasure: item.rfqUnitOfMeasure,
@@ -714,6 +380,30 @@ export async function createRFQPurchaseOrder(
 
     // 5. UPDATE RFQ (NO SESSION)
     rfq.status = "PO_CREATED";
+    const awardedItemsPayload: any[] = [];
+
+    for (const item of quotationItems) {
+      const quotation = quotationMap.get(item.quotationId.toString());
+      if (!quotation) continue;
+
+      awardedItemsPayload.push({
+        rfqItemId: item.rfqItemId,
+        vendorId: quotation.vendorId,
+        quotationId: quotation._id,
+      });
+    }
+
+    const uniqueAwardedItems = Array.from(
+      new Map(
+        awardedItemsPayload.map((i) => [
+          `${i.rfqItemId}_${i.vendorId}_${i.quotationId}`,
+          i,
+        ])
+      ).values()
+    );
+
+    rfq.awardedItems = uniqueAwardedItems;
+
     await rfq.save();
 
     return sendResponse({

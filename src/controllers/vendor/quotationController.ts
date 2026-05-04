@@ -275,7 +275,7 @@ export const submitQuotation = async (
 
         return {
           quotationId: null,
-
+          rfqId: rfq._id,
           rfqItemId: rfqItem._id,
 
           quotedQuantity: quantity,
